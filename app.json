@@ -1,33 +1,56 @@
 {
   "expo": {
-    "name": "vahan360-driverapp",
-    "slug": "vahan360-driverapp",
+    "name": "Vahan360",
+    "slug": "vahan360-customer",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "vahan360driverapp",
+    "icon": "./assets/images/icon.png",
+    "scheme": "vahan360",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FF7A00"
-    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.vahan360.customer",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Vahan360 uses your location to show nearby drivers, set your pickup point automatically, and give you accurate fare estimates.",
+        "NSContactsUsageDescription": "Vahan360 needs access to your contacts so you can quickly fill in receiver details when sending a parcel."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/splash.png",
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#FF7A00"
-      }
+      },
+      "package": "com.vahan360.customer",
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "READ_CONTACTS"]
     },
     "web": {
-      "favicon": "./assets/images/favicon.png"
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/icon.png"
     },
     "plugins": [
       "expo-router",
-      "expo-asset",
       "expo-font",
-      "@react-native-community/datetimepicker"
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Vahan360 uses your location to show nearby drivers, set your pickup point automatically, and give you accurate fare estimates."
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Vahan360 needs access to your contacts so you can quickly fill in receiver details when sending a parcel."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FF6B00",
+          "image": "./assets/images/splash.png",
+          "imageWidth": 200
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

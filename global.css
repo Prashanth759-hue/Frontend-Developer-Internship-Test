@@ -1,0 +1,109 @@
+/*
+ * Web-only layout fix.
+ *
+ * Expo's built-in reset stylesheet sets:
+ *   #root, body, html { height: 100% }
+ *   #root { display: flex }
+ *
+ * It does NOT set width:100% on #root, and a plain "display: flex" defaults
+ * to flex-direction: row in CSS. React Native's <View> layout model assumes
+ * the opposite (flex-direction: column, and a parent that fills its
+ * container both ways). Without this fix, the whole app collapses to the
+ * intrinsic width of its content and sits pinned to the left of the
+ * browser window, with everything below the fold rendering as overlapping/
+ * absolutely-positioned blocks instead of a normal top-to-bottom layout.
+ *
+ * This file is web-only — importing CSS in app/_layout.tsx has no effect
+ * on iOS/Android and does not change anything in Expo Go.
+ */
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* Avoid horizontal scrollbars caused by any stray fixed-width children. */
+body {
+  overflow-x: hidden;
+}
+
+/*
+ * react-native-web ImageBackground sizing fix.
+ *
+ * On web, react-native-web's <ImageBackground> renders an inner wrapper
+ * <div> with an INLINE style of width/height set to the source image's
+ * raw pixel dimensions (e.g. "width: 853px; height: 1671px;") instead of
+ * stretching to fill its parent. This happens regardless of the
+ * position:absolute + top/right/bottom/left:0 classes React Native also
+ * applies, because the inline width/height declarations win.
+ *
+ * This affects every screen in this app that uses ImageBackground as a
+ * full-screen backdrop (37 screens) and is the cause of pages rendering
+ * at a fixed ~850px-wide column instead of filling the browser window.
+ *
+ * Fix: force that wrapper to fill its parent with !important, which beats
+ * the inline style. Targets the data attribute react-native-web puts on
+ * every element it renders, scoped to elements that already carry the
+ * absolute-fill positioning classes, so this does not affect unrelated
+ * fixed-size images elsewhere (e.g. avatars, icons, vehicle thumbnails).
+ */
+div[style*="z-index: -1"][style*="height"][style*="width"] {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/*
+ * Responsive desktop background swap — login & home screens only.
+ *
+ * On phones the app shows a tall, portrait photo (login-bg.png /
+ * home-bg.png) behind the login card / home content. That photo looks
+ * cropped and awkward stretched across a wide desktop browser window, so
+ * on wide screens we swap in a separate, wide-format photo
+ * (login-bg-pc.png / home-bg-pc.png) instead — purely visually, with no
+ * change to any screen's code.
+ *
+ * How react-native-web actually renders ImageBackground (confirmed by
+ * inspecting the live DOM):
+ *   - An outer wrapper <div> is sized to fill its parent (handled by the
+ *     rule above).
+ *   - An <img> tag is rendered but kept invisible (opacity: 0) — it only
+ *     exists so the browser loads/decodes the file.
+ *   - The photo you actually SEE is painted by a separate, deeper <div>
+ *     that has an INLINE style="background-image: url(...)" pointing at
+ *     the original file. This is the element that needs overriding.
+ *
+ * Fix: target that inline style directly via an attribute selector
+ * matching the image's file name (stable across Metro's content-hash
+ * renames) and override it with !important, which beats the inline
+ * declaration. Below the breakpoint, none of this applies — the original
+ * mobile photo renders exactly as before (same as Expo Go).
+ *
+ * Resizing the browser across the breakpoint swaps the image live, with
+ * no reload needed, since it's a plain media query.
+ */
+@media (min-width: 901px) {
+  div[style*="login-bg."] {
+    background-image: url("/images/login-bg-pc.png") !important;
+  }
+
+  div[style*="home-bg."] {
+    background-image: url("/images/home-bg-pc.png") !important;
+  }
+
+  div[style*="login-bg."],
+  div[style*="home-bg."] {
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+  }
+}
+
+
