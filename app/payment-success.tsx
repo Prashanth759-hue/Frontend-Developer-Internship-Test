@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ImageBackground, ScrollView,
+  ImageBackground, ScrollView, Share, Alert, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -26,6 +26,26 @@ export default function PaymentSuccessScreen() {
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+  const handleDownloadReceipt = async () => {
+    const receiptText =
+      `Vahan Payment Receipt\n` +
+      `----------------------------\n` +
+      `Transaction ID: ${TXN_ID}\n` +
+      `Date: ${dateStr}, ${timeStr}\n` +
+      `Type: ${isAddMoney ? 'Wallet Top-up' : 'Ride Payment'}\n` +
+      `Amount: ₹${displayAmount.toLocaleString('en-IN')}\n` +
+      `Status: Completed\n`;
+
+    try {
+      await Share.share(
+        { title: 'Vahan Payment Receipt', message: receiptText },
+        { dialogTitle: 'Share or save your receipt' },
+      );
+    } catch {
+      Alert.alert('Could not share receipt', 'Please try again in a moment.');
+    }
+  };
 
   return (
     <ImageBackground
@@ -107,7 +127,11 @@ export default function PaymentSuccessScreen() {
           </View>
 
           {/* Actions */}
-          <TouchableOpacity style={styles.downloadBtn}>
+          <TouchableOpacity
+            style={styles.downloadBtn}
+            onPress={handleDownloadReceipt}
+            accessibilityLabel="Download or share payment receipt"
+          >
             <Download size={18} color={Colors.primary} />
             <Text style={styles.downloadBtnText}>Download Receipt</Text>
           </TouchableOpacity>
@@ -137,7 +161,7 @@ export default function PaymentSuccessScreen() {
 }
 
 const makeStyles = (colors: any) => StyleSheet.create({
-  bg: { flex: 1 },
+  bg: { flex: 1, width: '100%', height: '100%' },
   safe: { flex: 1, backgroundColor: 'transparent' },
 
   content: {

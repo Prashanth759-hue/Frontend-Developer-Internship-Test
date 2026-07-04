@@ -31,15 +31,15 @@ export default function HelpScreen() {
   const { colors, isDark} = useTheme();
   const styles = makeStyles(colors);
   const { t } = useLanguage();
-  const params = useLocalSearchParams<{ openTicket?: string; openChat?: string }>();
+  const params = useLocalSearchParams<{ openTicket?: string; openChat?: string; category?: string; subject?: string }>();
 
   const [openId, setOpenId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Ticket form state
   const [showTicketModal, setShowTicketModal] = useState(params.openTicket === '1');
-  const [ticketCategory, setTicketCategory] = useState('');
-  const [ticketSubject, setTicketSubject] = useState('');
+  const [ticketCategory, setTicketCategory] = useState(params.category ?? '');
+  const [ticketSubject, setTicketSubject] = useState(params.subject ?? '');
   const [ticketDescription, setTicketDescription] = useState('');
   const [ticketSubmitted, setTicketSubmitted] = useState(false);
   const [ticketId, setTicketId] = useState('');
@@ -504,7 +504,7 @@ export default function HelpScreen() {
 }
 
 const makeStyles = (colors: any) => StyleSheet.create({
-  backgroundImage: { flex: 1 },
+  backgroundImage: { flex: 1, width: '100%', height: '100%' },
   safe: { flex: 1, backgroundColor: 'transparent' },
 
   heroHeader: {

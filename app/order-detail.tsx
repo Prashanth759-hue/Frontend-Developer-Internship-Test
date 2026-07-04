@@ -1,11 +1,14 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, ImageBackground, Linking, Alert, Share,
+  TouchableOpacity, ImageBackground, Linking, Alert, Modal, TextInput, Platform,
 } from 'react-native';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system/legacy';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Phone, Star, Clock, MessageCircle, HelpCircle, FileText, AlertTriangle, Download } from 'lucide-react-native';
+import { ArrowLeft, Phone, Star, Clock, MessageCircle, HelpCircle, FileText, AlertTriangle, Download, Share2, X, CheckCircle } from 'lucide-react-native';
 import { Colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { useComingSoon } from '../components/common/ComingSoonModal';
@@ -15,6 +18,13 @@ import { useAuthStore } from '../store/authStore';
 import { useTripHistoryStore, getUserTrips } from '../store/tripHistoryStore';
 import { Button } from '../components/common/Button';
 import HOME_BG from '../assets/bg/homeBg';
+
+// Quick issue chips for a fast "flag a problem with this order" report —
+// separate from the full multi-category ticket form on the Help screen.
+const TRIP_ISSUE_TAGS = [
+  'Overcharged', 'Rude behaviour', 'Unsafe driving',
+  'Took wrong route', 'Vehicle condition', 'Left item behind',
+];
 
 export default function OrderDetailScreen() {
   const { colors, isDark} = useTheme();
@@ -30,6 +40,13 @@ export default function OrderDetailScreen() {
   const realTrips = useTripHistoryStore((s) => getUserTrips(s, user?.id));
   const allOrders = useMemo(() => [...realTrips, ...MOCK_ORDERS], [realTrips]);
   const order = allOrders.find((o) => o.id === id) ?? allOrders[0];
+
+  // Quick trip-issue report modal state
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportCategory, setReportCategory] = useState('');
+  const [reportDescription, setReportDescription] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportSubmitted, setReportSubmitted] = useState(false);
 
   const handleCallSupport = () => {
     const phone = 'tel:+918001234567';
@@ -49,38 +66,130 @@ export default function OrderDetailScreen() {
     });
   };
 
-  const handleDownloadReceipt = async () => {
+  const buildReceiptHtml = () => {
     const total = parseInt(order.fare.replace('₹', ''), 10) || 0;
-    const receiptText =
-      `VAHAN360 — TRIP RECEIPT\n` +
-      `------------------------------\n` +
-      `Trip Reference: ${order.id}\n` +
-      `Date: ${order.date} · ${order.time}\n` +
-      `Service: ${order.service}\n` +
-      `Status: ${order.status.toUpperCase()}\n\n` +
-      `Pickup: ${order.pickup}\n` +
-      `Drop: ${order.drop}\n\n` +
-      `Base Fare: ₹${Math.round(total * 0.65)}\n` +
-      `Distance Charge: ₹${Math.round(total * 0.22)}\n` +
-      `Platform Fee: ₹${Math.round(total * 0.05)}\n` +
-      `GST (5%): ₹${Math.round(total * 0.05)}\n` +
-      `------------------------------\n` +
-      `Total Charged: ${order.fare}\n\n` +
-      `Payment Method: Cash\n` +
-      (order.driverName ? `Driver: ${order.driverName}\nVehicle: ${order.vehicleNumber ?? '—'}\n\n` : '\n') +
-      `Thank you for riding with Vahan360!`;
+    return `
+      <html>
+        <body style="font-family: -apple-system, Helvetica, Arial, sans-serif; padding: 24px; color: #1F2937;">
+          <h1 style="color: #FF6B00; margin-bottom: 0;">Vahan360</h1>
+          <p style="margin-top: 4px; color: #6B7280;">Trip Receipt</p>
+          <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 16px 0;" />
+          <p><strong>Trip Reference:</strong> ${order.id}</p>
+          <p><strong>Date:</strong> ${order.date} · ${order.time}</p>
+          <p><strong>Service:</strong> ${order.service} &nbsp;&nbsp; <strong>Status:</strong> ${order.status.toUpperCase()}</p>
+          <p><strong>Pickup:</strong> ${order.pickup}</p>
+          <p><strong>Drop:</strong> ${order.drop}</p>
+          <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 16px 0;" />
+          <table width="100%" style="font-size: 14px;">
+            <tr><td>Base Fare</td><td align="right">₹${Math.round(total * 0.65)}</td></tr>
+            <tr><td>Distance Charge</td><td align="right">₹${Math.round(total * 0.22)}</td></tr>
+            <tr><td>Platform Fee</td><td align="right">₹${Math.round(total * 0.05)}</td></tr>
+            <tr><td>GST (5%)</td><td align="right">₹${Math.round(total * 0.05)}</td></tr>
+          </table>
+          <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 16px 0;" />
+          <table width="100%" style="font-size: 18px; font-weight: bold;">
+            <tr><td>Total Charged</td><td align="right" style="color: #FF6B00;">${order.fare}</td></tr>
+          </table>
+          <p style="margin-top: 8px; color: #6B7280;">Payment Method: Cash</p>
+          ${order.driverName ? `<p style="color: #6B7280;">Driver: ${order.driverName} &nbsp; Vehicle: ${order.vehicleNumber ?? '—'}</p>` : ''}
+          <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 16px 0;" />
+          <p style="color: #9CA3AF; font-size: 12px;">Thank you for riding with Vahan360!</p>
+        </body>
+      </html>
+    `;
+  };
 
+  // Renders the receipt to a temporary PDF file and returns its local uri.
+  const generateReceiptPdf = async () => {
+    const { uri } = await Print.printToFileAsync({ html: buildReceiptHtml() });
+    return uri;
+  };
+
+  // Download Receipt — actually saves the PDF onto the device (Android:
+  // via the system folder picker; iOS: via the OS's own Save-to-Files
+  // sheet, since iOS has no app-writable "Downloads" folder).
+  const handleDownloadReceipt = async () => {
     try {
-      await Share.share({
-        title: `Receipt - ${order.id}`,
-        message: receiptText,
-      });
+      const pdfUri = await generateReceiptPdf();
+      const fileName = `Vahan360-Receipt-${order.id}.pdf`;
+
+      if (Platform.OS === 'android') {
+        const perm = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+        if (!perm.granted) {
+          Alert.alert('Permission needed', 'Choose a folder to save the receipt into.');
+          return;
+        }
+        const base64 = await FileSystem.readAsStringAsync(pdfUri, { encoding: FileSystem.EncodingType.Base64 });
+        const destUri = await FileSystem.StorageAccessFramework.createFileAsync(
+          perm.directoryUri, fileName, 'application/pdf'
+        );
+        await FileSystem.writeAsStringAsync(destUri, base64, { encoding: FileSystem.EncodingType.Base64 });
+        Alert.alert('Receipt downloaded', 'Saved to the folder you selected.');
+      } else {
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(pdfUri, {
+            mimeType: 'application/pdf',
+            dialogTitle: 'Save Receipt',
+            UTI: 'com.adobe.pdf',
+          });
+        } else {
+          Alert.alert('Receipt ready', `Saved to: ${pdfUri}`);
+        }
+      }
     } catch (e) {
-      Alert.alert('Could not share receipt', 'Please try again.');
+      Alert.alert('Could not download receipt', 'Please try again.');
     }
   };
 
+  // Share Trip Details — always opens the native share sheet, separate
+  // from the on-device Download above.
+  const handleShareTripDetails = async () => {
+    try {
+      const pdfUri = await generateReceiptPdf();
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(pdfUri, {
+          mimeType: 'application/pdf',
+          dialogTitle: `Trip ${order.id}`,
+          UTI: 'com.adobe.pdf',
+        });
+      } else {
+        Alert.alert('Sharing unavailable', 'Sharing is not available on this device.');
+      }
+    } catch (e) {
+      Alert.alert('Could not share trip details', 'Please try again.');
+    }
+  };
+
+  // Report Issue — fast, lightweight modal answered right here on the
+  // page, separate from the full Raise a Support Ticket flow below.
+  const handleReportIssue = () => {
+    setShowReportModal(true);
+  };
+
+  const handleSubmitReport = () => {
+    if (!reportCategory) {
+      Alert.alert('Select an issue', 'Please choose what went wrong.');
+      return;
+    }
+    setReportSubmitting(true);
+    setTimeout(() => {
+      setReportSubmitting(false);
+      setReportSubmitted(true);
+    }, 900);
+  };
+
+  const closeReportModal = () => {
+    setShowReportModal(false);
+    setReportCategory('');
+    setReportDescription('');
+    setReportSubmitted(false);
+  };
+
+
   return (
+    <>
     <ImageBackground
       source={HOME_BG}
       style={styles.backgroundImage}
@@ -256,7 +365,7 @@ export default function OrderDetailScreen() {
 
               <TouchableOpacity
                 style={styles.supportItem}
-                onPress={() => router.push({ pathname: '/help', params: { openTicket: '1', orderId: order.id } })}
+                onPress={handleReportIssue}
                 activeOpacity={0.8}
               >
                 <View style={styles.supportIconWrap}>
@@ -281,6 +390,13 @@ export default function OrderDetailScreen() {
             <Button
               label="Download Receipt"
               onPress={handleDownloadReceipt}
+              variant="outline"
+              style={styles.actionBtn}
+            />
+
+            <Button
+              label="Share Trip Details"
+              onPress={handleShareTripDetails}
               variant="outline"
               style={styles.actionBtn}
             />
@@ -316,11 +432,75 @@ export default function OrderDetailScreen() {
         </ScrollView>
       </SafeAreaView>
     </ImageBackground>
+
+    {/* Quick Report Issue modal — separate from the full Raise a Ticket flow */}
+    <Modal visible={showReportModal} transparent animationType="slide" onRequestClose={closeReportModal}>
+      <View style={styles.reportOverlay}>
+        <TouchableOpacity style={styles.reportDismiss} onPress={closeReportModal} />
+        <View style={styles.reportSheet}>
+          {reportSubmitted ? (
+            <View style={styles.reportSuccessWrap}>
+              <View style={styles.reportSuccessCircle}>
+                <CheckCircle size={32} color="#FFF" />
+              </View>
+              <Text style={styles.reportSuccessTitle}>Thanks, we've got it</Text>
+              <Text style={styles.reportSuccessSubtitle}>
+                We've logged this issue for order {order.id}. Our team will review it shortly.
+              </Text>
+              <Button label="Done" onPress={closeReportModal} style={{ width: '100%', marginTop: 8 }} />
+            </View>
+          ) : (
+            <>
+              <View style={styles.reportHeader}>
+                <Text style={styles.reportTitle}>Report an issue</Text>
+                <TouchableOpacity onPress={closeReportModal} style={styles.reportCloseBtn}>
+                  <X size={18} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.reportSubtitle}>Order {order.id} · What went wrong?</Text>
+
+              <View style={styles.tagsWrap}>
+                {TRIP_ISSUE_TAGS.map((tag) => (
+                  <TouchableOpacity
+                    key={tag}
+                    style={[styles.tag, reportCategory === tag && styles.tagActive]}
+                    onPress={() => setReportCategory(tag)}
+                  >
+                    <Text style={[styles.tagText, reportCategory === tag && styles.tagTextActive]}>
+                      {tag}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <TextInput
+                style={[styles.feedbackInput, { color: colors.textPrimary, marginTop: 14 }]}
+                value={reportDescription}
+                onChangeText={setReportDescription}
+                placeholder="Add a few details (optional)..."
+                placeholderTextColor={colors.placeholder ?? '#9CA3AF'}
+                multiline
+                numberOfLines={3}
+                maxLength={200}
+              />
+
+              <Button
+                label="Submit Report"
+                onPress={handleSubmitReport}
+                loading={reportSubmitting}
+                style={{ width: '100%', marginTop: 14 }}
+              />
+            </>
+          )}
+        </View>
+      </View>
+    </Modal>
+    </>
   );
 }
 
 const makeStyles = (colors: any) => StyleSheet.create({
-  backgroundImage: { flex: 1 },
+  backgroundImage: { flex: 1, width: '100%', height: '100%' },
   safe: { flex: 1, backgroundColor: 'transparent' },
 
   heroHeader: {
@@ -414,5 +594,41 @@ const makeStyles = (colors: any) => StyleSheet.create({
   receiptMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   receiptMetaKey: { fontSize: 13, color: colors.placeholder, fontWeight: '500', minWidth: 100 },
   receiptMetaVal: { fontSize: 13, color: colors.textPrimary, fontWeight: '600', flex: 1 },
+
+  // Quick Report Issue modal
+  reportOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  reportDismiss: { ...StyleSheet.absoluteFillObject },
+  reportSheet: {
+    backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    padding: 20, paddingBottom: 32,
+  },
+  reportHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  reportTitle: { fontSize: 18, fontWeight: '800', color: colors.textPrimary },
+  reportCloseBtn: {
+    width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.inputBackground, borderWidth: 1, borderColor: colors.cardBorder,
+  },
+  reportSubtitle: { fontSize: 13, color: colors.textSecondary, marginTop: 4, marginBottom: 16 },
+  reportSuccessWrap: { alignItems: 'center', paddingVertical: 12, gap: 8 },
+  reportSuccessCircle: {
+    width: 64, height: 64, borderRadius: 32, backgroundColor: '#16A34A',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 4,
+  },
+  reportSuccessTitle: { fontSize: 17, fontWeight: '800', color: colors.textPrimary },
+  reportSuccessSubtitle: { fontSize: 13, color: colors.textSecondary, textAlign: 'center', lineHeight: 19 },
+
+  tagsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tag: {
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+    backgroundColor: colors.inputBackground, borderWidth: 1, borderColor: colors.border,
+  },
+  tagActive: { backgroundColor: colors.iconBg, borderColor: Colors.primary },
+  tagText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
+  tagTextActive: { color: Colors.primary },
+  feedbackInput: {
+    borderWidth: 1, borderColor: colors.cardBorder, borderRadius: 16,
+    padding: 12, minHeight: 80, fontSize: 14, lineHeight: 20,
+    textAlignVertical: 'top',
+  },
 })
 ;

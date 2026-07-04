@@ -332,7 +332,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
   // Fixed full-screen background — sits behind everything and never moves,
   // regardless of keyboard state.
-  heroImage: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  heroImage: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
   imageOverlay: { flex: 1, backgroundColor: 'rgba(255,255,255,0.4)' },
   // Only this wrapper resizes/shifts with the keyboard; it floats on top of
   // the fixed background and pins the card to the bottom of the screen.

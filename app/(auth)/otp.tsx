@@ -25,6 +25,7 @@ import { useAuthStore } from '../../store/authStore';
 import { validateOTP, isValidOTP } from '../../utils/validators';
 import { checkRateLimit } from '../../constants/security';
 import { secureSet, KEYS } from '../../constants/storage';
+import { sendOTP, verifyOTP } from '../../services/api';
 import { ArrowLeft } from 'lucide-react-native';
 import LOGIN_BG from '../../assets/bg/loginBg';
 import { bgTopAnchor } from '../../assets/bg/bgPosition';
@@ -191,12 +192,6 @@ export default function OTPScreen() {
       return;
     }
 
-    // Validate against the accepted OTP
-    if (otpStr !== '123456') {
-      setOtpError('Incorrect OTP. Please check and try again.');
-      return;
-    }
-
     setOtpError('');
     setNetworkError(null);
     setPendingAction('verify');
@@ -211,19 +206,21 @@ export default function OTPScreen() {
         return;
       }
 
-      // --- Replace the block below with your real API call ---
-      await new Promise<void>((resolve) => setTimeout(resolve, 1500));
-      // -------------------------------------------------------
+      // Real call to POST /v1/auth/customer/verify-otp
+      const res = await verifyOTP({ phone, otp: otpStr });
 
       setLoading(false);
+      setUser(res.data.user);
       setAuthenticated(true);
-      await secureSet(KEYS.AUTH_TOKEN, 'mock_token_' + Date.now());
+      await secureSet(KEYS.AUTH_TOKEN, res.data.token);
       router.replace('/(auth)/personal-details');
 
     } catch (err: any) {
       setLoading(false);
-      if (err?.name === 'AbortError' || err?.message === 'timeout') {
+      if (err?.message === 'timeout') {
         setNetworkError('timeout');
+      } else if (/incorrect|invalid.*otp/i.test(err?.message || '')) {
+        setOtpError(err.message);
       } else {
         setNetworkError('server');
       }
@@ -247,9 +244,8 @@ export default function OTPScreen() {
         return;
       }
 
-      // --- Replace the block below with your real resend API call ---
-      await new Promise<void>((resolve) => setTimeout(resolve, 800));
-      // --------------------------------------------------------------
+      // Real call to POST /v1/auth/customer/request-otp
+      await sendOTP({ phone });
 
       setLoading(false);
       startResendTimer();
@@ -410,7 +406,7 @@ export default function OTPScreen() {
 
 const makeStyles = (colors: any) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
-  heroImage: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  heroImage: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
   imageOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.15)' },
   keyboardAvoider: { flex: 1, justifyContent: 'flex-end' },
   card: {

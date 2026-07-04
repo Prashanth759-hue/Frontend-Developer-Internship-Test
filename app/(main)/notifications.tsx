@@ -97,7 +97,7 @@ export default function NotificationsScreen() {
 }
 
 const makeStyles = (colors: any) => StyleSheet.create({
-  backgroundImage: { flex: 1 },
+  backgroundImage: { flex: 1, width: '100%', height: '100%' },
   safe: { flex: 1, backgroundColor: 'transparent' },
 
   heroHeader: {

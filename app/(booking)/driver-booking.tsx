@@ -35,7 +35,7 @@ export default function DriverBookingScreen() {
   const { t } = useLanguage();
   const {
     pickup, drop, scheduledSlot, estimatedFare, appliedCoupon,
-    moversFlow, movingItemCount, helperCount, resetBooking,
+    moversFlow, movingItemCount, helperCount, resetBooking, activeBookingId,
   } = useBookingStore();
 
   const driver = useMemo(
@@ -46,7 +46,13 @@ export default function DriverBookingScreen() {
   const discount = appliedCoupon?.discount ?? 0;
   const total = Math.max(0, estimatedFare - discount);
 
-  const bookingId = useMemo(() => `PM-${Math.floor(100000 + Math.random() * 900000)}`, []);
+  // Reuse the id the "Booked" order was already saved under in Order
+  // History (see searching.tsx) so this screen's Booking ID and the one
+  // shown later in My Orders always match.
+  const bookingId = useMemo(
+    () => activeBookingId ?? `PM-${Math.floor(100000 + Math.random() * 900000)}`,
+    [activeBookingId]
+  );
 
   const flowLabel =
     moversFlow === 'mini_truck' ? 'Mini Truck Shifting'
@@ -172,7 +178,7 @@ export default function DriverBookingScreen() {
 }
 
 const makeStyles = (colors: any) => StyleSheet.create({
-  bg: { flex: 1 },
+  bg: { flex: 1, width: '100%', height: '100%' },
   root: { flex: 1 },
   content: { paddingHorizontal: 16, paddingTop: 24, paddingBottom: 16, gap: 14 },
 

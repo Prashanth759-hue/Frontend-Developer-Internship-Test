@@ -113,7 +113,7 @@ export default function MoversScheduleScreen() {
 }
 
 const makeStyles = (colors: any) => StyleSheet.create({
-  bg: { flex: 1 },
+  bg: { flex: 1, width: '100%', height: '100%' },
   safe: { flex: 1, backgroundColor: 'transparent' },
   heroHeader: {
     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24,

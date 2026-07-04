@@ -10,6 +10,8 @@ import { Colors } from '../../theme/colors';
 import { useTheme } from '../../theme/ThemeContext';
 import { useLanguage } from '../../theme/LanguageContext';
 import { useBookingStore } from '../../store/bookingStore';
+import { useAuthStore } from '../../store/authStore';
+import { useTripHistoryStore } from '../../store/tripHistoryStore';
 import { useComingSoon } from '../../components/common/ComingSoonModal';
 import { Button } from '../../components/common/Button';
 import { DraggableSheet } from '../../components/common/DraggableSheet';
@@ -154,7 +156,11 @@ export default function DriverFoundScreen() {
   const styles = makeStyles(colors);
   const { t } = useLanguage();
   const { show: showComingSoon, modal } = useComingSoon();
-  const { pickup, drop, resetBooking, serviceType, estimatedFare, paymentMode } = useBookingStore();
+  const {
+    pickup, drop, resetBooking, serviceType, estimatedFare, paymentMode, activeBookingId,
+  } = useBookingStore();
+  const { user } = useAuthStore();
+  const updateTripStatus = useTripHistoryStore((s) => s.updateTripStatus);
   const [showTripDetails, setShowTripDetails] = useState(false);
   // Measured content height — lets the DraggableSheet know exactly how
   // tall the content is, so dragging up stops right where it ends instead
@@ -210,7 +216,17 @@ export default function DriverFoundScreen() {
   const handleCancel = () => {
     Alert.alert('Cancel Booking', 'Cancel this booking?', [
       { text: 'Keep It', style: 'cancel' },
-      { text: 'Cancel', style: 'destructive', onPress: () => { resetBooking(); router.replace('/(main)/home'); } },
+      {
+        text: 'Cancel', style: 'destructive', onPress: () => {
+          // Flip the already-"Booked" order to "Cancelled" instead of
+          // dropping it, so it still shows up in Order History.
+          if (user && activeBookingId) {
+            updateTripStatus(user.id, activeBookingId, 'cancelled');
+          }
+          resetBooking();
+          router.replace('/(main)/home');
+        },
+      },
     ]);
   };
 

@@ -22,7 +22,7 @@ export interface TripRecord {
   date: string; // e.g. '27 Jun 2026'
   time: string; // e.g. '10:30 AM'
   fare: string; // e.g. '₹120'
-  status: 'completed' | 'cancelled';
+  status: 'booked' | 'ongoing' | 'completed' | 'cancelled';
   driverName: string | null;
   driverPhone: string | null;
   vehicleNumber: string | null;
@@ -35,6 +35,15 @@ interface TripHistoryState {
   /** Map of userId -> their trips. Keeps accounts on the same device separate. */
   tripsByUser: Record<string, TripRecord[]>;
   addTrip: (userId: string, trip: TripRecord) => void;
+  /** Insert a trip if its id doesn't exist yet, otherwise merge the given fields into the existing record. */
+  upsertTrip: (userId: string, trip: TripRecord) => void;
+  /** Patch an existing trip's status (and any other fields) in place, e.g. booked -> completed / cancelled. */
+  updateTripStatus: (
+    userId: string,
+    tripId: string,
+    status: TripRecord['status'],
+    extra?: Partial<TripRecord>
+  ) => void;
 }
 
 /** Stable empty-array reference so selectors don't return a new [] every render. */
@@ -53,6 +62,42 @@ export const useTripHistoryStore = create<TripHistoryState>()(
             [userId]: [trip, ...(state.tripsByUser[userId] ?? [])],
           },
         })),
+
+      // Creates the record if this id hasn't been seen yet (e.g. first time
+      // a booking is confirmed), or merges new fields into the existing
+      // record if it has (e.g. moving booked -> completed). This is what
+      // lets a single order go through booked -> ongoing -> completed /
+      // cancelled without ever showing up twice in Order History.
+      upsertTrip: (userId, trip) =>
+        set((state) => {
+          const existing = state.tripsByUser[userId] ?? [];
+          const idx = existing.findIndex((t) => t.id === trip.id);
+          if (idx === -1) {
+            return {
+              tripsByUser: {
+                ...state.tripsByUser,
+                [userId]: [trip, ...existing],
+              },
+            };
+          }
+          const updated = [...existing];
+          updated[idx] = { ...updated[idx], ...trip };
+          return {
+            tripsByUser: { ...state.tripsByUser, [userId]: updated },
+          };
+        }),
+
+      updateTripStatus: (userId, tripId, status, extra) =>
+        set((state) => {
+          const existing = state.tripsByUser[userId] ?? [];
+          const idx = existing.findIndex((t) => t.id === tripId);
+          if (idx === -1) return state;
+          const updated = [...existing];
+          updated[idx] = { ...updated[idx], ...extra, status };
+          return {
+            tripsByUser: { ...state.tripsByUser, [userId]: updated },
+          };
+        }),
     }),
     {
       name: 'vahan360-trip-history',

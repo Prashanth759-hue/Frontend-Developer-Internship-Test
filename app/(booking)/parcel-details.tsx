@@ -292,7 +292,7 @@ export default function ParcelDetailsScreen() {
 }
 
 const makeStyles = (colors: any) => StyleSheet.create({
-  bg: { flex: 1 },
+  bg: { flex: 1, width: '100%', height: '100%' },
   safe: { flex: 1, backgroundColor: 'transparent' },
   hero: {
     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 22,

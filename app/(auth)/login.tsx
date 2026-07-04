@@ -25,6 +25,7 @@ import { Input } from '../../components/common/Input';
 import { useAuthStore } from '../../store/authStore';
 import { checkRateLimit } from '../../constants/security';
 import { validatePhone, isValidPhone } from '../../utils/validators';
+import { sendOTP } from '../../services/api';
 import LOGIN_BG from '../../assets/bg/loginBg';
 import { bgTopAnchor } from '../../assets/bg/bgPosition';
 
@@ -118,7 +119,7 @@ export default function LoginScreen() {
     }
   };
 
-  const handleSendOTP = () => {
+  const handleSendOTP = async () => {
     const result = validatePhone(phoneInput);
     if (!result.valid) {
       setLocalError(result.error ?? t('loginErrorInvalid'));
@@ -131,10 +132,18 @@ export default function LoginScreen() {
     setLocalError('');
     setPhone(phoneInput);
     setLoading(true);
-    setTimeout(() => {
+    try {
+      await sendOTP({ phone: phoneInput });
       setLoading(false);
       router.push('/(auth)/otp');
-    }, 1200);
+    } catch (err: any) {
+      setLoading(false);
+      setLocalError(
+        err?.message === 'timeout'
+          ? 'Request timed out. Check that your backend is running and reachable.'
+          : err?.message || t('loginErrorInvalid')
+      );
+    }
   };
 
   // Active language label for the button
@@ -314,7 +323,7 @@ export default function LoginScreen() {
 
 const makeStyles = (colors: any) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
-  heroImage: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  heroImage: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
   imageOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.10)' },
   keyboardAvoider: { flex: 1, justifyContent: 'flex-end' },
   card: {

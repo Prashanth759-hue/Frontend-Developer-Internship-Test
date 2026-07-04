@@ -21,6 +21,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import { useLanguage } from '../../theme/LanguageContext';
 import { Button } from '../../components/common/Button';
 import { DraggableSheet } from '../../components/common/DraggableSheet';
+import PaymentOptionsModal from '../../components/booking/PaymentOptionsModal';
 import { useBookingStore, PaymentMode } from '../../store/bookingStore';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -41,9 +42,11 @@ const SERVICE_IMAGES: Record<string, ImageSourcePropType> = {
 };
 
 const PAYMENT_OPTIONS: { id: PaymentMode; label: string; image: ImageSourcePropType; desc: string }[] = [
-  { id: 'cash',   label: 'Cash',   image: require('../../assets/images/icon-cash.png'),   desc: 'Pay on arrival' },
-  { id: 'upi',    label: 'UPI',    image: require('../../assets/images/icon-upi.png'),     desc: 'Instant transfer' },
-  { id: 'wallet', label: 'Wallet', image: require('../../assets/images/icon-wallet.png'),  desc: 'Vahan Pay balance' },
+  { id: 'cash',       label: 'Cash',       image: require('../../assets/images/icon-cash.png'),   desc: 'Pay on arrival' },
+  { id: 'upi',        label: 'UPI',        image: require('../../assets/images/icon-upi.png'),     desc: 'Instant transfer' },
+  { id: 'wallet',     label: 'Wallet',     image: require('../../assets/images/icon-wallet.png'),  desc: 'Vahan Pay balance' },
+  { id: 'card',       label: 'Card',       image: require('../../assets/images/icon-upi.png'),     desc: 'Debit / Credit card' },
+  { id: 'netbanking', label: 'Netbanking', image: require('../../assets/images/icon-wallet.png'),  desc: 'All major banks' },
 ];
 
 const VALID_COUPONS: Record<string, { discount: number; label: string }> = {
@@ -145,7 +148,7 @@ export default function FareScreen() {
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
-  const [showPaymentDropdown, setShowPaymentDropdown] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showCouponDropdown, setShowCouponDropdown] = useState(false);
   // Measured content heights — lets the DraggableSheet know exactly how
   // tall the scrollable content + pinned action row are, so dragging up
@@ -191,6 +194,7 @@ export default function FareScreen() {
   const discount = appliedCoupon?.discount ?? 0;
   const packagingFare = packagingOption?.price ?? 0;
   const total = Math.max(0, subtotal + packagingFare - discount);
+  const walletBalance = 0;
 
   const handleApplyCoupon = () => {
     const code = couponInput.trim().toUpperCase();
@@ -217,7 +221,6 @@ export default function FareScreen() {
   };
 
   const handleConfirm = () => {
-    const walletBalance = 0;
     if (paymentMode === 'wallet' && walletBalance < total) {
       Alert.alert(
         'Insufficient Wallet Balance',
@@ -234,6 +237,25 @@ export default function FareScreen() {
       setLoading(false);
       router.push('/(booking)/searching');
     }, 1000);
+  };
+
+  // Continue tapped inside the full-screen Payment Options sheet — validates
+  // then closes the sheet and runs the same confirm flow as the pinned
+  // "Confirm" button.
+  const handlePaymentModalContinue = () => {
+    if (paymentMode === 'wallet' && walletBalance < total) {
+      Alert.alert(
+        'Insufficient Wallet Balance',
+        `Your Vahan Pay balance (₹${walletBalance}) is less than the fare (₹${total}). Please add money or choose another payment method.`,
+        [
+          { text: 'Add Money', onPress: () => { setShowPaymentModal(false); router.push('/add-money'); } },
+          { text: 'Change Payment', style: 'cancel' },
+        ],
+      );
+      return;
+    }
+    setShowPaymentModal(false);
+    handleConfirm();
   };
 
   const safetyLabel = isLogistics
@@ -392,77 +414,28 @@ export default function FareScreen() {
             )}
           </View>
 
-          {/* ══ Container 3: Payment Method (dropdown) ══ */}
-          <View style={[styles.sheetCard, { borderColor: colors.cardBorder, backgroundColor: '#FFFFFF', marginBottom: 16 }]}>
-            <TouchableOpacity
-              style={styles.breakdownHeader}
-              onPress={() => setShowPaymentDropdown((v) => !v)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.paymentSummaryLeft}>
-                <Image
-                  source={PAYMENT_OPTIONS.find((p) => p.id === paymentMode)?.image}
-                  style={styles.payChipImage}
-                />
-                <View>
-                  <Text style={[styles.cardLabel, { color: colors.placeholder, marginBottom: 0 }]}>💳 PAYMENT METHOD</Text>
-                  <Text style={[styles.paymentSummaryValue, { color: colors.textPrimary }]}>{paymentLabel}</Text>
-                </View>
+          {/* ══ Container 3: Payment Method — opens the full Payment Options sheet ══ */}
+          <TouchableOpacity
+            style={[styles.sheetCard, styles.breakdownHeader, { borderColor: colors.cardBorder, backgroundColor: '#FFFFFF', marginBottom: 16 }]}
+            onPress={() => setShowPaymentModal(true)}
+            activeOpacity={0.8}
+            accessibilityLabel="Change payment method"
+          >
+            <View style={styles.paymentSummaryLeft}>
+              <Image
+                source={PAYMENT_OPTIONS.find((p) => p.id === paymentMode)?.image}
+                style={styles.payChipImage}
+              />
+              <View>
+                <Text style={[styles.cardLabel, { color: colors.placeholder, marginBottom: 0 }]}>💳 PAYMENT METHOD</Text>
+                <Text style={[styles.paymentSummaryValue, { color: colors.textPrimary }]}>{paymentLabel}</Text>
               </View>
-              {showPaymentDropdown ? (
-                <ChevronUp size={16} color="#9CA3AF" />
-              ) : (
-                <ChevronDown size={16} color="#9CA3AF" />
-              )}
-            </TouchableOpacity>
-
-            {showPaymentDropdown && (
-              <View style={{ marginTop: 12, gap: 8 }}>
-                {PAYMENT_OPTIONS.map((opt) => {
-                  const isSelected = paymentMode === opt.id;
-                  const isWallet = opt.id === 'wallet';
-                  const walletBalance = 0;
-                  const insufficientWallet = isWallet && walletBalance < total;
-                  return (
-                    <TouchableOpacity
-                      key={opt.id}
-                      style={[
-                        styles.paymentOptionRow,
-                        { marginTop: 0, backgroundColor: colors.inputBackground, borderColor: isSelected ? Colors.primary : colors.cardBorder },
-                      ]}
-                      onPress={() => setPaymentMode(opt.id)}
-                      accessibilityLabel={`Select ${opt.label} payment`}
-                      accessibilityState={{ selected: isSelected }}
-                      activeOpacity={0.8}
-                    >
-                      <View style={styles.paymentOptionLeft}>
-                        <Image source={opt.image} style={styles.payImage} />
-                        <View style={styles.paymentOptionInfo}>
-                          <Text style={[styles.paymentLabel, { color: isSelected ? Colors.primary : colors.textPrimary }]}>
-                            {opt.label}
-                          </Text>
-                          <Text style={[styles.paymentDesc, { color: colors.textSecondary }]}>
-                            {isWallet ? `Balance: ₹${walletBalance}` : opt.desc}
-                          </Text>
-                          {insufficientWallet && (
-                            <Text style={styles.insufficientText}>
-                              Insufficient balance ·{' '}
-                              <Text style={{ fontWeight: '700', color: Colors.primary }} onPress={() => router.push('/add-money')}>
-                                Add Money
-                              </Text>
-                            </Text>
-                          )}
-                        </View>
-                      </View>
-                      <View style={[styles.radioCircle, { borderColor: isSelected ? Colors.primary : colors.border }]}>
-                        {isSelected && <View style={styles.radioInner} />}
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            )}
-          </View>
+            </View>
+            <View style={[styles.tripDetailsBtn, { borderColor: colors.cardBorder }]}>
+              <Text style={styles.tripDetailsBtnText}>Change</Text>
+              <ChevronDown size={14} color={Colors.primary} />
+            </View>
+          </TouchableOpacity>
 
           {/* ══ Container 4: Coupon / Promo (dropdown) ══ */}
           <View style={[styles.sheetCard, { borderColor: colors.cardBorder, backgroundColor: '#FFFFFF', marginBottom: 16 }]}>
@@ -777,53 +750,25 @@ export default function FareScreen() {
                 )}
               </View>
 
-              {/* Payment Method */}
-              <View style={[styles.card, { borderColor: colors.cardBorder, backgroundColor: colors.surface }]}>
-                <Text style={[styles.cardLabel, { color: colors.placeholder }]}>💳 PAYMENT METHOD</Text>
-                {PAYMENT_OPTIONS.map((opt) => {
-                  const isSelected = paymentMode === opt.id;
-                  const isWallet = opt.id === 'wallet';
-                  const walletBalance = 0;
-                  const insufficientWallet = isWallet && walletBalance < total;
-                  return (
-                    <TouchableOpacity
-                      key={opt.id}
-                      style={[
-                        styles.paymentOptionRow,
-                        isSelected && styles.paymentOptionRowActive,
-                        { backgroundColor: colors.inputBackground, borderColor: isSelected ? Colors.primary : colors.cardBorder },
-                      ]}
-                      onPress={() => setPaymentMode(opt.id)}
-                      accessibilityLabel={`Select ${opt.label} payment`}
-                      accessibilityState={{ selected: isSelected }}
-                      activeOpacity={0.8}
-                    >
-                      <View style={styles.paymentOptionLeft}>
-                        <Image source={opt.image} style={styles.payImage} />
-                        <View style={styles.paymentOptionInfo}>
-                          <Text style={[styles.paymentLabel, isSelected && styles.paymentLabelActive, { color: isSelected ? Colors.primary : colors.textPrimary }]}>
-                            {opt.label}
-                          </Text>
-                          <Text style={[styles.paymentDesc, { color: colors.textSecondary }]}>
-                            {isWallet ? `Balance: ₹${walletBalance}` : opt.desc}
-                          </Text>
-                          {insufficientWallet && (
-                            <Text style={styles.insufficientText}>
-                              Insufficient balance ·{' '}
-                              <Text style={{ fontWeight: '700', color: Colors.primary }} onPress={() => router.push('/add-money')}>
-                                Add Money
-                              </Text>
-                            </Text>
-                          )}
-                        </View>
-                      </View>
-                      <View style={[styles.radioCircle, isSelected && styles.radioCircleActive, { borderColor: isSelected ? Colors.primary : colors.border }]}>
-                        {isSelected && <View style={styles.radioInner} />}
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+              {/* Payment Method — opens the full Payment Options sheet */}
+              <TouchableOpacity
+                style={[styles.card, { borderColor: colors.cardBorder, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
+                onPress={() => setShowPaymentModal(true)}
+                activeOpacity={0.8}
+                accessibilityLabel="Change payment method"
+              >
+                <View style={styles.paymentSummaryLeft}>
+                  <Image source={PAYMENT_OPTIONS.find((p) => p.id === paymentMode)?.image} style={styles.payChipImage} />
+                  <View>
+                    <Text style={[styles.cardLabel, { color: colors.placeholder, marginBottom: 0 }]}>💳 PAYMENT METHOD</Text>
+                    <Text style={[styles.paymentSummaryValue, { color: colors.textPrimary }]}>{paymentLabel}</Text>
+                  </View>
+                </View>
+                <View style={[styles.tripDetailsBtn, { borderColor: colors.cardBorder }]}>
+                  <Text style={styles.tripDetailsBtnText}>Change</Text>
+                  <ChevronDown size={14} color={Colors.primary} />
+                </View>
+              </TouchableOpacity>
 
               {/* Safety banner */}
               <View style={[styles.safetyBanner, { backgroundColor: colors.iconBg, borderColor: colors.iconBorder }]}>
@@ -852,6 +797,19 @@ export default function FareScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* ── Full-screen Payment Options sheet (Rapido-style) ── */}
+      <PaymentOptionsModal
+        visible={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        amount={total}
+        selected={paymentMode}
+        onSelect={setPaymentMode}
+        onContinue={handlePaymentModalContinue}
+        onAddCard={() => { setShowPaymentModal(false); router.push('/(main)/payment-methods'); }}
+        loading={loading}
+        walletBalance={walletBalance}
+      />
     </View>
   );
 }

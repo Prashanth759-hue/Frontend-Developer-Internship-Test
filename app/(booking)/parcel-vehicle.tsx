@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ImageBackground, Image, ImageSourcePropType,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -86,55 +86,58 @@ export default function ParcelVehicleScreen() {
           </View>
         </View>
 
-        <FlatList
-          data={vehicles}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={s.list}
-          showsVerticalScrollIndicator={false}
-          ListHeaderComponent={
-            vehicles.length === 0 ? null : (
-              <View style={s.infoCard}>
-                <Info size={14} color="#F59E0B" />
-                <Text style={s.infoText}>
-                  Showing {vehicles.length} vehicle{vehicles.length === 1 ? '' : 's'} suitable for your goods.
-                </Text>
-              </View>
-            )
-          }
-          renderItem={({ item }) => {
-            const isActive = selected === item.id;
-            return (
-              <TouchableOpacity
-                style={[s.row, isActive && s.rowActive]}
-                onPress={() => setSelected(item.id)}
-                accessibilityLabel={`Select ${item.name}, ₹${item.fare}, ${item.eta}`}
-                activeOpacity={0.85}
-              >
-                <Image
-                  source={VEHICLE_IMAGES[item.icon] ?? VEHICLE_IMAGES.bike}
-                  style={s.vehicleImg}
-                />
-                <View style={s.info}>
-                  <Text style={[s.vehicleName, { color: colors.textPrimary }]}>{item.name}</Text>
-                  <Text style={[s.vehicleDesc, { color: colors.textSecondary }]}>{item.description}</Text>
-                  <View style={s.etaRow}>
-                    <Clock size={11} color={colors.textSecondary} />
-                    <Text style={[s.etaText, { color: colors.textSecondary }]}>{item.eta}</Text>
-                  </View>
-                </View>
-                <View style={s.fareArea}>
-                  <Text style={[s.fare, { color: colors.textPrimary }]}>₹{item.fare}</Text>
-                  {isActive && (
-                    <View style={s.checkCircle}>
-                      <Check size={11} color={Colors.white} />
+        <ScrollView contentContainerStyle={s.list} showsVerticalScrollIndicator={false}>
+          {vehicles.length > 0 && (
+            <View style={s.infoCard}>
+              <Info size={14} color="#F59E0B" />
+              <Text style={s.infoText}>
+                Showing {vehicles.length} vehicle{vehicles.length === 1 ? '' : 's'} suitable for your goods.
+              </Text>
+            </View>
+          )}
+
+          {vehicles.length > 0 ? (
+            <View style={[s.container, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
+              {vehicles.map((item, idx) => {
+                const isActive = selected === item.id;
+                const isLast = idx === vehicles.length - 1;
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[
+                      s.row,
+                      !isLast && { borderBottomWidth: 1, borderBottomColor: colors.cardBorder },
+                      isActive && { backgroundColor: colors.subtleBg },
+                    ]}
+                    onPress={() => setSelected(item.id)}
+                    accessibilityLabel={`Select ${item.name}, ₹${item.fare}, ${item.eta}`}
+                    activeOpacity={0.85}
+                  >
+                    <Image
+                      source={VEHICLE_IMAGES[item.icon] ?? VEHICLE_IMAGES.bike}
+                      style={s.vehicleImg}
+                    />
+                    <View style={s.info}>
+                      <Text style={[s.vehicleName, { color: colors.textPrimary }]}>{item.name}</Text>
+                      <Text style={[s.vehicleDesc, { color: colors.textSecondary }]} numberOfLines={1}>
+                        {item.description}
+                      </Text>
+                      <View style={s.etaRow}>
+                        <Clock size={10} color={colors.textSecondary} />
+                        <Text style={[s.etaText, { color: colors.textSecondary }]}>{item.eta}</Text>
+                      </View>
                     </View>
-                  )}
-                </View>
-              </TouchableOpacity>
-            );
-          }}
-          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-          ListEmptyComponent={
+                    <View style={s.fareArea}>
+                      <Text style={[s.fare, { color: colors.textPrimary }]}>₹{item.fare}</Text>
+                      <View style={[s.radio, isActive && s.radioActive]}>
+                        {isActive && <Check size={11} color={Colors.white} />}
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ) : (
             <View style={s.emptyBox}>
               <Text style={[s.emptyTitle, { color: colors.textPrimary }]}>No vehicles available</Text>
               <Text style={[s.emptySub, { color: colors.textSecondary }]}>
@@ -144,27 +147,26 @@ export default function ParcelVehicleScreen() {
                 <Text style={s.emptyBtnText}>Go Back</Text>
               </TouchableOpacity>
             </View>
-          }
-          ListFooterComponent={
-            vehicles.length > 0 ? (
-              <View style={s.footer}>
-                <Button
-                  label={selectedVehicle ? `Book ${selectedVehicle.name} · ₹${selectedVehicle.fare}` : 'Select a vehicle'}
-                  onPress={handleContinue}
-                  disabled={!selectedVehicle}
-                  style={{ width: '100%' }}
-                />
-              </View>
-            ) : null
-          }
-        />
+          )}
+
+          {vehicles.length > 0 && (
+            <View style={s.footer}>
+              <Button
+                label={selectedVehicle ? `Book ${selectedVehicle.name} · ₹${selectedVehicle.fare}` : 'Select a vehicle'}
+                onPress={handleContinue}
+                disabled={!selectedVehicle}
+                style={{ width: '100%' }}
+              />
+            </View>
+          )}
+        </ScrollView>
       </SafeAreaView>
     </ImageBackground>
   );
 }
 
 const makeStyles = (colors: any) => StyleSheet.create({
-  bg: { flex: 1 },
+  bg: { flex: 1, width: '100%', height: '100%' },
   safe: { flex: 1, backgroundColor: 'transparent' },
   hero: {
     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20,
@@ -194,23 +196,29 @@ const makeStyles = (colors: any) => StyleSheet.create({
   },
   infoText: { flex: 1, fontSize: 12, color: '#F59E0B', fontWeight: '600' },
 
+  // Single container that holds every vehicle option as a compact row.
+  container: {
+    borderRadius: 20, borderWidth: 1, overflow: 'hidden',
+    shadowColor: '#FF6B00', shadowOpacity: 0.06, shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 }, elevation: 3,
+  },
   row: {
-    flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 18, padding: 14,
-    backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.cardBorder,
+    flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 14,
   },
-  rowActive: { borderColor: Colors.primary, borderWidth: 2, backgroundColor: colors.subtleBg ?? colors.iconBg },
-  vehicleImg: { width: 52, height: 52, resizeMode: 'contain' },
+  vehicleImg: { width: 42, height: 42, resizeMode: 'contain' },
   info: { flex: 1, gap: 2 },
-  vehicleName: { fontSize: 15, fontWeight: '800' },
-  vehicleDesc: { fontSize: 12, fontWeight: '500' },
+  vehicleName: { fontSize: 13, fontWeight: '800' },
+  vehicleDesc: { fontSize: 11, fontWeight: '500' },
   etaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  etaText: { fontSize: 11, fontWeight: '600' },
+  etaText: { fontSize: 10, fontWeight: '600' },
   fareArea: { alignItems: 'flex-end', gap: 6 },
-  fare: { fontSize: 17, fontWeight: '800' },
-  checkCircle: {
-    width: 22, height: 22, borderRadius: 11,
-    backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center',
+  fare: { fontSize: 15, fontWeight: '800' },
+  radio: {
+    width: 18, height: 18, borderRadius: 9,
+    borderWidth: 1.5, borderColor: colors.cardBorder,
+    justifyContent: 'center', alignItems: 'center',
   },
+  radioActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   footer: { paddingTop: 16, paddingBottom: 32 },
   emptyBox: { alignItems: 'center', paddingVertical: 48, gap: 12 },
   emptyTitle: { fontSize: 17, fontWeight: '800' },

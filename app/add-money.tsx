@@ -10,6 +10,8 @@ import { Colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { useLanguage } from '../theme/LanguageContext';
 import HOME_BG from '../assets/bg/homeBg';
+import PaymentOptionsModal from '../components/booking/PaymentOptionsModal';
+import type { PaymentMode } from '../store/bookingStore';
 
 const QUICK_AMOUNTS = [100, 200, 500, 1000, 2000, 5000];
 
@@ -19,6 +21,8 @@ export default function AddMoneyScreen() {
   const { t } = useLanguage();
   const [amount, setAmount] = useState('');
   const [error, setError] = useState('');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [payMode, setPayMode] = useState<PaymentMode>('upi');
 
   const numericAmount = parseInt(amount.replace(/[^0-9]/g, ''), 10) || 0;
   const isValid = numericAmount >= 10 && numericAmount <= 50000;
@@ -43,10 +47,23 @@ export default function AddMoneyScreen() {
       setError('Maximum add money amount is ₹50,000.');
       return;
     }
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentModalContinue = () => {
+    setShowPaymentModal(false);
     router.push({
       pathname: '/payment-processing',
       params: { amount: String(numericAmount), type: 'add_money' },
     });
+  };
+
+  const PAY_VIA_LABELS: Record<PaymentMode, string> = {
+    upi: 'UPI',
+    card: 'Debit / Credit Card',
+    netbanking: 'Net Banking',
+    wallet: 'Vahan Pay',
+    cash: 'Cash',
   };
 
   return (
@@ -128,9 +145,16 @@ export default function AddMoneyScreen() {
           {/* Payment Methods */}
           <View style={styles.card}>
             <Text style={styles.cardLabel}>PAY VIA</Text>
-            {['UPI', 'Debit / Credit Card', 'Net Banking'].map((method) => (
-              <TouchableOpacity key={method} style={styles.payMethodRow}>
-                <Text style={[styles.payMethodText, { color: colors.textPrimary }]}>{method}</Text>
+            {(['upi', 'card', 'netbanking'] as PaymentMode[]).map((method) => (
+              <TouchableOpacity
+                key={method}
+                style={styles.payMethodRow}
+                onPress={() => { setPayMode(method); setShowPaymentModal(true); }}
+                accessibilityLabel={`Pay via ${PAY_VIA_LABELS[method]}`}
+              >
+                <Text style={[styles.payMethodText, { color: payMode === method ? Colors.primary : colors.textPrimary }]}>
+                  {PAY_VIA_LABELS[method]}
+                </Text>
                 <ChevronRight size={18} color="#9CA3AF" />
               </TouchableOpacity>
             ))}
@@ -157,12 +181,25 @@ export default function AddMoneyScreen() {
 
         </ScrollView>
       </SafeAreaView>
+
+      <PaymentOptionsModal
+        visible={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        amount={numericAmount}
+        selected={payMode}
+        onSelect={setPayMode}
+        onContinue={handlePaymentModalContinue}
+        onAddCard={() => { setShowPaymentModal(false); router.push('/(main)/payment-methods'); }}
+        walletBalance={0}
+        title="Add Money via"
+        excludeModes={['wallet', 'cash']}
+      />
     </ImageBackground>
   );
 }
 
 const makeStyles = (colors: any) => StyleSheet.create({
-  bg: { flex: 1 },
+  bg: { flex: 1, width: '100%', height: '100%' },
   safe: { flex: 1, backgroundColor: 'transparent' },
 
   header: {

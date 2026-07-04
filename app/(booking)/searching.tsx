@@ -11,6 +11,13 @@ import { useTheme } from '../../theme/ThemeContext';
 import { useLanguage } from '../../theme/LanguageContext';
 import { useComingSoon } from '../../components/common/ComingSoonModal';
 import { useBookingStore, type ServiceType } from '../../store/bookingStore';
+import { useAuthStore } from '../../store/authStore';
+import {
+  useTripHistoryStore,
+  formatTripDate,
+  formatTripTime,
+  SERVICE_TYPE_TO_LABEL,
+} from '../../store/tripHistoryStore';
 import { Button } from '../../components/common/Button';
 import { DraggableSheet } from '../../components/common/DraggableSheet';
 
@@ -160,7 +167,13 @@ export default function SearchingScreen() {
   const styles = makeStyles(colors);
   const { t } = useLanguage();
   const { modal } = useComingSoon();
-  const { pickup, drop, estimatedFare, resetBooking, serviceType, setServiceType, appliedCoupon } = useBookingStore();
+  const {
+    pickup, drop, estimatedFare, resetBooking, serviceType, setServiceType,
+    appliedCoupon, activeBookingId, setActiveBookingId,
+  } = useBookingStore();
+  const { user } = useAuthStore();
+  const upsertTrip = useTripHistoryStore((s) => s.upsertTrip);
+  const updateTripStatus = useTripHistoryStore((s) => s.updateTripStatus);
   const [searchDots, setSearchDots] = useState('.');
   const [driverNotFound, setDriverNotFound] = useState(false);
   const [showCancelSheet, setShowCancelSheet] = useState(false);
@@ -186,6 +199,32 @@ export default function SearchingScreen() {
     const foundTimer = setTimeout(() => {
       clearInterval(dotTimer);
       if (outcome === 'found') {
+        // Record the order as "Booked" the moment a driver/partner is
+        // confirmed, so it shows up in Order History immediately — for
+        // every domain (ride, truck, parcel, packers & movers) — instead
+        // of only appearing once the trip is later rated as completed.
+        if (user) {
+          const now = new Date();
+          const bookingId = activeBookingId ?? `TRIP-${now.getTime()}`;
+          setActiveBookingId(bookingId);
+          upsertTrip(user.id, {
+            id: bookingId,
+            service: serviceType ? SERVICE_TYPE_TO_LABEL[serviceType] ?? 'Ride' : 'Ride',
+            pickup: pickup?.address ?? pickup?.label ?? 'Pickup Location',
+            drop: drop?.address ?? drop?.label ?? 'Drop Location',
+            date: formatTripDate(now),
+            time: formatTripTime(now),
+            fare: `₹${estimatedFare}`,
+            status: 'booked',
+            driverName: null,
+            driverPhone: null,
+            vehicleNumber: null,
+            rating: null,
+            distance: null,
+            duration: null,
+          });
+        }
+
         if (serviceType === 'packers_movers') {
           router.replace('/(booking)/driver-booking');
         } else {
@@ -212,6 +251,36 @@ export default function SearchingScreen() {
   const handleCancelConfirm = () => {
     if (!selectedReason) return;
     setShowCancelSheet(false);
+
+    // Make sure a cancelled order always shows up in Order History — if a
+    // "booked" record already exists (driver was found) flip it to
+    // cancelled, otherwise create one now so cancelling during the search
+    // itself is still recorded.
+    if (user) {
+      const now = new Date();
+      const bookingId = activeBookingId ?? `TRIP-${now.getTime()}`;
+      if (activeBookingId) {
+        updateTripStatus(user.id, bookingId, 'cancelled');
+      } else {
+        upsertTrip(user.id, {
+          id: bookingId,
+          service: serviceType ? SERVICE_TYPE_TO_LABEL[serviceType] ?? 'Ride' : 'Ride',
+          pickup: pickup?.address ?? pickup?.label ?? 'Pickup Location',
+          drop: drop?.address ?? drop?.label ?? 'Drop Location',
+          date: formatTripDate(now),
+          time: formatTripTime(now),
+          fare: `₹${estimatedFare}`,
+          status: 'cancelled',
+          driverName: null,
+          driverPhone: null,
+          vehicleNumber: null,
+          rating: null,
+          distance: null,
+          duration: null,
+        });
+      }
+    }
+
     resetBooking();
     router.replace('/(main)/home');
   };

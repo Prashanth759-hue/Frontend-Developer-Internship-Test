@@ -202,7 +202,7 @@ export default function HomeScreen() {
                 router.push('/(booking)/pickup');
               }}
             >
-              <Image source={require('../../assets/images/Ride-card.png')} style={styles.categoryImageWide} resizeMode="contain" />
+              <Image source={require('../../assets/images/Ride.png')} style={styles.categoryImage} />
               <Text style={styles.categoryTitle}>{t('categoryRide')}</Text>
             </TouchableOpacity>
 
@@ -214,7 +214,7 @@ export default function HomeScreen() {
                 router.push('/(booking)/truck');
               }}
             >
-              <Image source={require('../../assets/images/truck-card.png')} style={styles.categoryImageWide} resizeMode="contain" />
+              <Image source={require('../../assets/images/truck.png')} style={styles.categoryImage} />
               <Text style={styles.categoryTitle}>{t('categoryTruck')}</Text>
             </TouchableOpacity>
           </View>
@@ -228,7 +228,7 @@ export default function HomeScreen() {
                 router.push('/(booking)/packers-movers');
               }}
             >
-              <Image source={require('../../assets/images/Packers-Movers.png')} style={styles.categoryImage} resizeMode="contain" />
+              <Image source={require('../../assets/images/Packers-Movers.png')} style={styles.categoryImage} />
               <Text style={styles.categoryTitle}>{t('categoryPackersMovers')}</Text>
             </TouchableOpacity>
 
@@ -240,7 +240,7 @@ export default function HomeScreen() {
                 router.push('/(booking)/parcel-location');
               }}
             >
-              <Image source={require('../../assets/images/parcel.png')} style={styles.categoryImage} resizeMode="contain" />
+              <Image source={require('../../assets/images/parcel.png')} style={styles.categoryImage} />
               <Text style={styles.categoryTitle}>{t('categoryParcel')}</Text>
             </TouchableOpacity>
           </View>
@@ -262,7 +262,7 @@ export default function HomeScreen() {
 
 const makeStyles = (colors: any) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  backgroundImage: { flex: 1 },
+  backgroundImage: { flex: 1, width: '100%', height: '100%' },
   scroll: { gap: Spacing.lg, paddingBottom: 20 },
 
   heroGradient: {
@@ -328,25 +328,11 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
   categoryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16 },
   categoryCard: {
-    width: '48%', backgroundColor: colors.surface, borderRadius: 24, padding: 10,
+    width: '48%', backgroundColor: colors.surface, borderRadius: 24, padding: 16,
     alignItems: 'center', borderWidth: 1, borderColor: '#FF6B00',
-    overflow: 'visible',
-    minHeight: 164,
+    overflow: 'hidden',
   },
-  categoryImage: {
-    width: '92%',
-    height: 96,
-    resizeMode: 'contain',
-    alignSelf: 'center',
-    flexShrink: 0,
-  },
-  categoryImageWide: {
-    width: '100%',
-    height: 108,
-    resizeMode: 'contain',
-    alignSelf: 'center',
-    flexShrink: 0,
-  },
+  categoryImage: { width: '100%', maxWidth: 160, height: 100, resizeMode: 'contain' },
   categoryTitle: { marginTop: 10, fontSize: 18, fontWeight: '700', color: colors.textPrimary },
 })
 ;

@@ -1,4 +1,3 @@
-import '../global.css';
 import { Stack } from 'expo-router';
 import { ThemeProvider } from '../theme/ThemeContext';
 import { LanguageProvider } from '../theme/LanguageContext';

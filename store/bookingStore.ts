@@ -5,7 +5,7 @@ export type TripMode = 'within_city' | 'inter_cities' | 'long_trips';
 // Which Packers & Movers sub-flow is active. Drives step order on the shared
 // pickup screen (location/floor vs goods details) and where "continue" goes.
 export type MoversFlow = 'within_city' | 'mini_truck' | 'between_cities';
-export type PaymentMode = 'cash' | 'upi' | 'wallet';
+export type PaymentMode = 'cash' | 'upi' | 'wallet' | 'card' | 'netbanking';
 export type BookingStatus = 'idle' | 'searching' | 'driver_assigned' | 'in_progress' | 'completed' | 'cancelled';
 
 interface Location {
@@ -93,6 +93,7 @@ interface BookingState {
   setAppliedCoupon: (coupon: AppliedCoupon | null) => void;
   setLoading: (value: boolean) => void;
   setError: (error: string | null) => void;
+  setActiveBookingId: (id: string | null) => void;
   resetBooking: () => void;
 }
 
@@ -139,6 +140,7 @@ export const useBookingStore = create<BookingState>((set) => ({
   setAppliedCoupon: (coupon) => set({ appliedCoupon: coupon }),
   setLoading: (value) => set({ isLoading: value }),
   setError: (error) => set({ error }),
+  setActiveBookingId: (id) => set({ activeBookingId: id }),
   resetBooking: () =>
   set({
     serviceType: null,

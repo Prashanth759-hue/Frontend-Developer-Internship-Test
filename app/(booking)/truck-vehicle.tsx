@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   ImageBackground,
   Image,
@@ -78,7 +77,7 @@ export default function TruckVehicleScreen() {
     router.push('/(booking)/fare');
   };
 
-  const dims = selected ? VEHICLE_DIMENSIONS[selected] : null;
+
 
   return (
     <ImageBackground source={HOME_BG} style={styles.backgroundImage} resizeMode="cover">
@@ -154,119 +153,109 @@ export default function TruckVehicleScreen() {
           </View>
         </View>
 
-        <FlatList
-          data={vehicles}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => {
-            const isActive = selected === item.id;
-            const vdims = VEHICLE_DIMENSIONS[item.id];
-            return (
-              <TouchableOpacity
-                style={[styles.vehicleCard, isActive && styles.vehicleCardActive]}
-                onPress={() => setSelected(item.id)}
-                accessibilityLabel={`Select ${item.name}`}
-                activeOpacity={0.85}
-              >
-                {/* When selected — show the Porter-style dimension view */}
-                {isActive && vdims ? (
-                  <View style={styles.dimensionBox}>
-                    <Text style={styles.dimTop}>{vdims.length}</Text>
-                    <Text style={styles.dimRight}>{vdims.width}</Text>
-                    <Text style={styles.dimHeight}>{vdims.height}</Text>
-                    <Image
-                      source={TRUCK_IMAGES[item.icon] ?? TRUCK_IMAGES.mini_truck}
-                      style={styles.vehicleImageLarge}
-                    />
-                  </View>
-                ) : (
+        <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+          <View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
+            {vehicles.map((item, idx) => {
+              const isActive = selected === item.id;
+              const isLast = idx === vehicles.length - 1;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={[
+                    styles.row,
+                    !isLast && { borderBottomWidth: 1, borderBottomColor: colors.cardBorder },
+                    isActive && { backgroundColor: colors.subtleBg },
+                  ]}
+                  onPress={() => setSelected(item.id)}
+                  accessibilityLabel={`Select ${item.name}`}
+                  activeOpacity={0.85}
+                >
                   <Image
                     source={TRUCK_IMAGES[item.icon] ?? TRUCK_IMAGES.mini_truck}
                     style={styles.vehicleImage}
                   />
-                )}
 
-                <View style={styles.vehicleInfo}>
-                  <View style={styles.vehicleNameRow}>
-                    <Text style={[styles.vehicleName, { color: colors.textPrimary }]}>{item.name}</Text>
-                    {isActive && (
-                      <View style={styles.checkCircle}>
-                        <Check size={12} color={Colors.white} />
-                      </View>
-                    )}
-                  </View>
-                  <Text style={[styles.vehicleDesc, { color: colors.textSecondary }]}>{item.description}</Text>
-                  <View style={styles.metaRow}>
-                    <View style={styles.capacityBadge}>
-                      <Text style={styles.capacityBadgeText}>{item.capacity}</Text>
+                  <View style={styles.vehicleInfo}>
+                    <View style={styles.vehicleNameRow}>
+                      <Text style={[styles.vehicleName, { color: colors.textPrimary }]}>{item.name}</Text>
+                      {isActive && (
+                        <View style={styles.checkCircle}>
+                          <Check size={11} color={Colors.white} />
+                        </View>
+                      )}
                     </View>
-                    <Clock size={12} color={Colors.primary} />
-                    <Text style={styles.etaText}>{item.eta}</Text>
-                  </View>
-                </View>
-
-                <Text style={[styles.fareText, isActive && styles.fareTextActive]}>
-                  ₹{item.fare}
-                </Text>
-              </TouchableOpacity>
-            );
-          }}
-          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-          ListFooterComponent={
-            <View style={styles.footer}>
-              {/* ── Helper Stepper ── */}
-              <View style={styles.helperCard}>
-                <Text style={styles.cardLabel}>🧑‍🤝‍🧑 LOADING & UNLOADING HELP</Text>
-                <View style={styles.helperRow}>
-                  <Image
-                    source={require('../../assets/images/icon-handtruck.png')}
-                    style={styles.helperImage}
-                  />
-                  <View style={styles.helperInfo}>
-                    <Text style={[styles.helperTitle, { color: colors.textPrimary }]}>
-                      Need help with loading?
+                    <Text style={[styles.vehicleDesc, { color: colors.textSecondary }]} numberOfLines={1}>
+                      {item.description}
                     </Text>
-                    <Text style={[styles.helperSubtitle, { color: colors.textSecondary }]}>
-                      ₹{HELPER_PRICE_PER_PERSON} per helper
-                    </Text>
+                    <View style={styles.metaRow}>
+                      <View style={styles.capacityBadge}>
+                        <Text style={styles.capacityBadgeText}>{item.capacity}</Text>
+                      </View>
+                      <Clock size={11} color={Colors.primary} />
+                      <Text style={styles.etaText}>{item.eta}</Text>
+                    </View>
                   </View>
 
-                  <View style={styles.stepper}>
-                    <TouchableOpacity
-                      style={[styles.stepperBtn, helpers === 0 && styles.stepperBtnDisabled]}
-                      onPress={() => setHelpers((h) => Math.max(0, h - 1))}
-                      disabled={helpers === 0}
-                    >
-                      <Minus size={16} color={helpers === 0 ? colors.border : Colors.primary} />
-                    </TouchableOpacity>
-                    <Text style={styles.stepperCount}>{helpers}</Text>
-                    <TouchableOpacity
-                      style={[styles.stepperBtn, helpers === MAX_HELPERS && styles.stepperBtnDisabled]}
-                      onPress={() => setHelpers((h) => Math.min(MAX_HELPERS, h + 1))}
-                      disabled={helpers === MAX_HELPERS}
-                    >
-                      <Plus size={16} color={helpers === MAX_HELPERS ? colors.border : Colors.primary} />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                {helpers > 0 && (
-                  <Text style={styles.helperCostNote}>
-                    Helper cost: ₹{helperCost} ({helpers} × ₹{HELPER_PRICE_PER_PERSON})
+                  <Text style={[styles.fareText, isActive && styles.fareTextActive]}>
+                    ₹{item.fare}
                   </Text>
-                )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <View style={styles.footer}>
+            {/* ── Helper Stepper ── */}
+            <View style={styles.helperCard}>
+              <Text style={styles.cardLabel}>🧑‍🤝‍🧑 LOADING & UNLOADING HELP</Text>
+              <View style={styles.helperRow}>
+                <Image
+                  source={require('../../assets/images/icon-handtruck.png')}
+                  style={styles.helperImage}
+                />
+                <View style={styles.helperInfo}>
+                  <Text style={[styles.helperTitle, { color: colors.textPrimary }]}>
+                    Need help with loading?
+                  </Text>
+                  <Text style={[styles.helperSubtitle, { color: colors.textSecondary }]}>
+                    ₹{HELPER_PRICE_PER_PERSON} per helper
+                  </Text>
+                </View>
+
+                <View style={styles.stepper}>
+                  <TouchableOpacity
+                    style={[styles.stepperBtn, helpers === 0 && styles.stepperBtnDisabled]}
+                    onPress={() => setHelpers((h) => Math.max(0, h - 1))}
+                    disabled={helpers === 0}
+                  >
+                    <Minus size={16} color={helpers === 0 ? colors.border : Colors.primary} />
+                  </TouchableOpacity>
+                  <Text style={styles.stepperCount}>{helpers}</Text>
+                  <TouchableOpacity
+                    style={[styles.stepperBtn, helpers === MAX_HELPERS && styles.stepperBtnDisabled]}
+                    onPress={() => setHelpers((h) => Math.min(MAX_HELPERS, h + 1))}
+                    disabled={helpers === MAX_HELPERS}
+                  >
+                    <Plus size={16} color={helpers === MAX_HELPERS ? colors.border : Colors.primary} />
+                  </TouchableOpacity>
+                </View>
               </View>
 
-              <Button
-                label={selectedTruck ? `Proceed with ${selectedTruck.name}` : 'Select a Vehicle'}
-                onPress={handleContinue}
-                disabled={!selectedTruck}
-                style={{ width: '100%' }}
-              />
+              {helpers > 0 && (
+                <Text style={styles.helperCostNote}>
+                  Helper cost: ₹{helperCost} ({helpers} × ₹{HELPER_PRICE_PER_PERSON})
+                </Text>
+              )}
             </View>
-          }
-        />
+
+            <Button
+              label={selectedTruck ? `Proceed with ${selectedTruck.name}` : 'Select a Vehicle'}
+              onPress={handleContinue}
+              disabled={!selectedTruck}
+              style={{ width: '100%' }}
+            />
+          </View>
+        </ScrollView>
       </SafeAreaView>
     </ImageBackground>
   );
@@ -274,7 +263,7 @@ export default function TruckVehicleScreen() {
 
 const makeStyles = (colors: any) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  backgroundImage: { flex: 1 },
+  backgroundImage: { flex: 1, width: '100%', height: '100%' },
 
   heroHeader: {
     paddingHorizontal: 20,
@@ -351,79 +340,42 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
   list: { paddingHorizontal: 16, paddingBottom: 16, paddingTop: 4 },
 
-  vehicleCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    borderRadius: 24,
-    padding: 16,
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.cardBorder,
+  // Single container that holds every truck option as a compact row.
+  container: {
+    borderRadius: 22,
+    borderWidth: 1,
+    overflow: 'hidden',
     shadowColor: '#FF6B00',
-    shadowOpacity: 0.07,
+    shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    elevation: 3,
   },
-  vehicleCardActive: {
-    borderColor: Colors.primary,
-    borderWidth: 2,
-    backgroundColor: colors.subtleBg,
-  },
-  vehicleImage: { width: 72, height: 72, resizeMode: 'contain' },
-
-  // Porter dimension box shown when selected
-  dimensionBox: {
-    width: 100,
-    height: 80,
-    position: 'relative',
+  row: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
   },
-  vehicleImageLarge: { width: 80, height: 64, resizeMode: 'contain' },
-  dimTop: {
-    position: 'absolute',
-    top: 0,
-    left: '50%',
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.primary,
-    transform: [{ translateX: -6 }],
-  },
-  dimRight: {
-    position: 'absolute',
-    right: 0,
-    top: '30%',
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-  dimHeight: {
-    position: 'absolute',
-    left: 0,
-    top: '40%',
-    fontSize: 10,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
+  vehicleImage: { width: 52, height: 52, resizeMode: 'contain' },
 
   vehicleInfo: { flex: 1, gap: 3 },
   vehicleNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  vehicleName: { fontSize: 16, fontWeight: '700' },
-  vehicleDesc: { fontSize: 12 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4, flexWrap: 'wrap' },
+  vehicleName: { fontSize: 14, fontWeight: '700' },
+  vehicleDesc: { fontSize: 11 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3, flexWrap: 'wrap' },
   capacityBadge: {
     backgroundColor: colors.iconBg,
-    paddingHorizontal: 8,
+    paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 10,
     marginRight: 6,
   },
   capacityBadgeText: { fontSize: 10, fontWeight: '700', color: Colors.primary },
-  etaText: { fontSize: 12, fontWeight: '600', color: Colors.primary },
+  etaText: { fontSize: 11, fontWeight: '600', color: Colors.primary },
 
-  fareText: { fontSize: 18, fontWeight: '800', color: colors.textPrimary },
+  fareText: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
   fareTextActive: { color: Colors.primary },
 
   checkCircle: {

@@ -240,7 +240,7 @@ export default function ReviewBookingScreen() {
 
 const makeStyles = (colors: any) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  backgroundImage: { flex: 1 },
+  backgroundImage: { flex: 1, width: '100%', height: '100%' },
 
   heroHeader: {
     paddingHorizontal: 20,

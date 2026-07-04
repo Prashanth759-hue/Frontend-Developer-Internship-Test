@@ -637,7 +637,7 @@ export default function PickupScreen() {
 
 const makeStyles = (colors: any) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  backgroundImage: { flex: 1 },
+  backgroundImage: { flex: 1, width: '100%', height: '100%' },
   heroHeader: {
     paddingHorizontal: 20,
     paddingTop: 16,
@@ -688,10 +688,9 @@ const makeStyles = (colors: any) => StyleSheet.create({
   chipText: { fontSize: 11, fontWeight: '600', color: '#FF6B00' },
   content: {
     paddingHorizontal: 16,
-    paddingBottom: 90,
+    paddingBottom: 40,
     gap: 14,
     paddingTop: 4,
-    flexGrow: 1,
   },
   card: {
     backgroundColor: colors.surface,
