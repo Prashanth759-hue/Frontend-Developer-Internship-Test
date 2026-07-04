@@ -47,7 +47,7 @@ export function LocationDeniedFallback({
         compact && styles.cardCompact,
       ]}
     >
-      <View style={[styles.iconWrapper, { backgroundColor: colors.iconBg }]}>
+      <View style={styles.iconWrapper}>
         <MapPinOff size={compact ? 22 : 28} color={Colors.primary} />
       </View>
 
@@ -92,6 +92,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
+    backgroundColor: Colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 2,

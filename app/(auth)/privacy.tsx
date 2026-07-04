@@ -9,19 +9,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
-import { useTheme } from '../../theme/ThemeContext';
-import HOME_BG from '../../assets/bg/homeBg';
 
 export default function PrivacyScreen() {
-  const { colors, isDark } = useTheme();
-  const styles = makeStyles(colors);
  return (
   <ImageBackground
-    source={HOME_BG}
+    source={require('../../assets/images/home-bg.png')}
     style={styles.backgroundImage}
     resizeMode="cover"
   >
-    <SafeAreaView style={[styles.container, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+    <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -112,15 +108,13 @@ export default function PrivacyScreen() {
 );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
   flex: 1,
   backgroundColor: 'transparent',
 },
   backgroundImage: {
   flex: 1,
-  width: '100%',
-  height: '100%',
 },
   backBtn: {
   width: 46,
@@ -130,7 +124,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   justifyContent: 'center',
   alignItems: 'center',
 
-  backgroundColor: colors.surface,
+  backgroundColor: '#FFFFFF',
 
   borderWidth: 1,
   borderColor: '#FFDCC6',
@@ -153,7 +147,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   },
 
   card: {
-  backgroundColor: colors.surface,
+  backgroundColor: 'rgba(255,255,255,0.95)',
 
   borderRadius: 28,
 
@@ -190,7 +184,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: '#1A1A1A',
     marginTop: 18,
     marginBottom: 10,
   },
@@ -198,13 +192,13 @@ const makeStyles = (colors: any) => StyleSheet.create({
   paragraph: {
     fontSize: 15,
     lineHeight: 26,
-    color: colors.textSecondary,
+    color: '#555',
   },
 
  bullet: {
   fontSize: 15,
   lineHeight: 26,
-  color: colors.textSecondary,
+  color: '#555',
   marginBottom: 4,
 },
 
@@ -212,7 +206,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     marginTop: 24,
     padding: 14,
     borderRadius: 14,
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
     borderWidth: 1,
     borderColor: '#FFD9C0',
   },
@@ -223,5 +217,4 @@ const makeStyles = (colors: any) => StyleSheet.create({
     color: '#FF6B00',
     fontWeight: '500',
   },
-})
-;
+});

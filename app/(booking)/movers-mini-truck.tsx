@@ -13,13 +13,11 @@ import { router } from 'expo-router';
 import { ArrowLeft, Minus, Plus, Check } from 'lucide-react-native';
 import { Colors } from '../../theme/colors';
 import { useTheme } from '../../theme/ThemeContext';
-import { useLanguage } from '../../theme/LanguageContext';
 import { Button } from '../../components/common/Button';
 import { useBookingStore } from '../../store/bookingStore';
 import { HELPER_PRICE_PER_PERSON, MAX_HELPERS } from '../../constants/mockData';
 
 // ── Simple load-size options ──────────────────────────────────────────────────
-import HOME_BG from '../../assets/bg/homeBg';
 const LOAD_SIZES = [
   {
     id: 'small',
@@ -28,8 +26,8 @@ const LOAD_SIZES = [
     desc: 'Few boxes, 1–2 items',
     weight: 'Up to 200 kg',
     examples: 'Boxes, suitcases, small furniture',
-    color: '#2E7D32',
-    borderColor: '#4CAF50',
+    color: '#E8F5E9',
+    borderColor: '#A5D6A7',
     accentColor: '#2E7D32',
   },
   {
@@ -59,9 +57,7 @@ const LOAD_SIZES = [
 type LoadSizeId = (typeof LOAD_SIZES)[number]['id'];
 
 export default function MoversMiniTruckScreen() {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
-  const { t } = useLanguage();
+  const { colors } = useTheme();
   const { setMovingItemCount, setHelperCount } = useBookingStore();
 
   const [selectedSize, setSelectedSize] = useState<LoadSizeId | null>(null);
@@ -79,11 +75,11 @@ export default function MoversMiniTruckScreen() {
 
   return (
     <ImageBackground
-      source={HOME_BG}
+      source={require('../../assets/images/home-bg.png')}
       style={styles.bg}
       resizeMode="cover"
     >
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <SafeAreaView style={styles.safe}>
         {/* ── Header ── */}
         <View style={styles.heroHeader}>
           <View style={styles.heroTopRow}>
@@ -91,13 +87,13 @@ export default function MoversMiniTruckScreen() {
               <ArrowLeft size={20} color="#FF6B00" />
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
-              <Text style={styles.heroTitle}>{t('shiftingMiniTruck')}</Text>
+              <Text style={styles.heroTitle}>Mini Truck Shifting</Text>
               <Text style={styles.heroSubtitle}>Light goods · Budget friendly</Text>
             </View>
           </View>
           <View style={styles.chipsRow}>
-            <View style={styles.chip}><Text style={styles.chipText}>{t('chipDoorstepLoading')}</Text></View>
-            <View style={styles.chip}><Text style={styles.chipText}>{t('chipLiveTracking')}</Text></View>
+            <View style={styles.chip}><Text style={styles.chipText}>🚚 Vehicle chosen next</Text></View>
+            <View style={styles.chip}><Text style={styles.chipText}>📍 Live tracking</Text></View>
           </View>
         </View>
 
@@ -133,7 +129,7 @@ export default function MoversMiniTruckScreen() {
                 key={size.id}
                 style={[
                   styles.sizeCard,
-                  { borderColor: active ? size.borderColor : colors.inputBackground },
+                  { borderColor: active ? size.borderColor : '#F0F0F0' },
                   active && { backgroundColor: size.color },
                 ]}
                 onPress={() => setSelectedSize(size.id)}
@@ -200,7 +196,7 @@ export default function MoversMiniTruckScreen() {
                   onPress={() => setHelpers((h) => Math.max(0, h - 1))}
                   disabled={helpers === 0}
                 >
-                  <Minus size={14} color={helpers === 0 ? colors.border : Colors.primary} />
+                  <Minus size={14} color={helpers === 0 ? '#C4C4C4' : Colors.primary} />
                 </TouchableOpacity>
                 <Text style={styles.stepCount}>{helpers}</Text>
                 <TouchableOpacity
@@ -208,7 +204,7 @@ export default function MoversMiniTruckScreen() {
                   onPress={() => setHelpers((h) => Math.min(MAX_HELPERS, h + 1))}
                   disabled={helpers === MAX_HELPERS}
                 >
-                  <Plus size={14} color={helpers === MAX_HELPERS ? colors.border : Colors.primary} />
+                  <Plus size={14} color={helpers === MAX_HELPERS ? '#C4C4C4' : Colors.primary} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -241,7 +237,7 @@ export default function MoversMiniTruckScreen() {
 
           <View style={{ height: 16 }} />
           <Button
-            label={t('confirm')}
+            label="Continue · Add Location"
             onPress={handleContinue}
             disabled={!canContinue}
             style={{ width: '100%' }}
@@ -253,25 +249,25 @@ export default function MoversMiniTruckScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
-  bg: { flex: 1, width: '100%', height: '100%' },
+const styles = StyleSheet.create({
+  bg: { flex: 1 },
   safe: { flex: 1, backgroundColor: 'transparent' },
 
   heroHeader: {
     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 28,
     borderBottomLeftRadius: 36, borderBottomRightRadius: 36,
-    overflow: 'hidden', backgroundColor: colors.surfaceElevated, marginBottom: 16,
+    overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.18)', marginBottom: 16,
   },
   heroTopRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 10 },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: colors.iconBorder, justifyContent: 'center', alignItems: 'center',
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF',
+    borderWidth: 1, borderColor: '#FFD6B3', justifyContent: 'center', alignItems: 'center',
   },
   heroTitle: { fontSize: 24, fontWeight: '800', color: '#FF6B00', letterSpacing: -0.5 },
-  heroSubtitle: { fontSize: 12, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
+  heroSubtitle: { fontSize: 12, color: '#666', fontWeight: '500', marginTop: 2 },
   chipsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   chip: {
-    backgroundColor: colors.surface, paddingHorizontal: 12, paddingVertical: 6,
+    backgroundColor: '#FFFFFF', paddingHorizontal: 12, paddingVertical: 6,
     borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
   },
   chipText: { fontSize: 11, fontWeight: '600', color: '#FF6B00' },
@@ -280,8 +276,8 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
   truckCard: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: colors.surface, borderRadius: 24, padding: 16, marginBottom: 24,
-    borderWidth: 1.5, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderRadius: 24, padding: 16, marginBottom: 24,
+    borderWidth: 1.5, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.07, shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 }, elevation: 4,
   },
@@ -290,20 +286,20 @@ const makeStyles = (colors: any) => StyleSheet.create({
   truckName: { fontSize: 15, fontWeight: '700' },
   truckDesc: { fontSize: 12, lineHeight: 17 },
 
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: colors.textPrimary, marginBottom: 4 },
-  sectionSub: { fontSize: 12, color: colors.placeholder, marginBottom: 14 },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 },
+  sectionSub: { fontSize: 12, color: '#9CA3AF', marginBottom: 14 },
 
   sizeCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 16,
     marginBottom: 10,
     borderWidth: 2,
-    borderColor: colors.inputBackground,
-    shadowColor: colors.textPrimary,
+    borderColor: '#F0F0F0',
+    shadowColor: '#000',
     shadowOpacity: 0.04,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
@@ -314,7 +310,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: colors.border,
+    borderColor: '#D1D5DB',
     justifyContent: 'center',
     alignItems: 'center',
     flexShrink: 0,
@@ -336,45 +332,45 @@ const makeStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
   },
-  sizeName: { fontSize: 15, fontWeight: '800', color: colors.textPrimary },
+  sizeName: { fontSize: 15, fontWeight: '800', color: '#1A1A1A' },
   weightBadge: {
-    backgroundColor: colors.inputBackground,
+    backgroundColor: '#F0F0F0',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
   },
-  weightBadgeText: { fontSize: 10, fontWeight: '700', color: colors.textSecondary },
+  weightBadgeText: { fontSize: 10, fontWeight: '700', color: '#6B7280' },
   sizeDesc: { fontSize: 12, fontWeight: '500' },
-  sizeExamples: { fontSize: 11, color: colors.border, marginTop: 1 },
+  sizeExamples: { fontSize: 11, color: '#B0B8C4', marginTop: 1 },
 
   helperCard: {
-    backgroundColor: colors.surface, borderRadius: 24, padding: 18,
+    backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18,
     marginTop: 8, marginBottom: 12,
-    borderWidth: 1, borderColor: colors.cardBorder,
+    borderWidth: 1, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.07, shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 }, elevation: 4,
   },
-  cardLabel: { fontSize: 10, fontWeight: '700', color: colors.placeholder, letterSpacing: 1.2, marginBottom: 12 },
+  cardLabel: { fontSize: 10, fontWeight: '700', color: '#9CA3AF', letterSpacing: 1.2, marginBottom: 12 },
   helperRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   helperTitle: { fontSize: 14, fontWeight: '700' },
   helperSub: { fontSize: 12, marginTop: 2 },
 
   stepper: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: colors.subtleBg, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 6,
-    borderWidth: 1, borderColor: colors.iconBorder,
+    backgroundColor: '#FFF7F2', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 6,
+    borderWidth: 1, borderColor: '#FFD6B3',
   },
   stepBtn: {
     width: 28, height: 28, borderRadius: 14,
-    backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: colors.iconBorder,
+    backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: '#FFD6B3',
   },
   stepBtnDisabled: { opacity: 0.45 },
-  stepCount: { fontSize: 15, fontWeight: '800', color: colors.textPrimary, minWidth: 20, textAlign: 'center' },
+  stepCount: { fontSize: 15, fontWeight: '800', color: '#1A1A1A', minWidth: 20, textAlign: 'center' },
 
   summaryCard: {
-    backgroundColor: colors.surface, borderRadius: 24, padding: 18, marginBottom: 4,
-    borderWidth: 1, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18, marginBottom: 4,
+    borderWidth: 1, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.07, shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 }, elevation: 4,
   },
@@ -384,5 +380,4 @@ const makeStyles = (colors: any) => StyleSheet.create({
   },
   summaryLabel: { fontSize: 13 },
   summaryValue: { fontSize: 13, fontWeight: '700' },
-})
-;
+});

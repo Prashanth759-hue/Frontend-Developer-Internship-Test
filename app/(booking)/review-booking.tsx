@@ -12,18 +12,14 @@ import { router } from 'expo-router';
 import { ArrowLeft, Circle, MapPin, Truck, Clock, Package, User, Phone, Weight } from 'lucide-react-native';
 import { Colors } from '../../theme/colors';
 import { useTheme } from '../../theme/ThemeContext';
-import { useLanguage } from '../../theme/LanguageContext';
 import { Button } from '../../components/common/Button';
 import { AddressText } from '../../components/common/AddressText';
 import { useBookingStore } from '../../store/bookingStore';
 import { INTERCITY_TRUCK_VEHICLES, LONGTRIP_TRUCK_VEHICLES } from '../../constants/mockData';
-import HOME_BG from '../../assets/bg/homeBg';
 
 export default function ReviewBookingScreen() {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
-  const { t } = useLanguage();
-  const { pickup, drop, tripMode, selectedVehicle, scheduledSlot, packagingOption, goodsDetails, estimatedFare } =
+  const { colors } = useTheme();
+  const { pickup, drop, tripMode, selectedVehicle, scheduledSlot, goodsDetails, estimatedFare } =
     useBookingStore();
 
   const vehicleList = tripMode === 'long_trips' ? LONGTRIP_TRUCK_VEHICLES : INTERCITY_TRUCK_VEHICLES;
@@ -35,11 +31,11 @@ export default function ReviewBookingScreen() {
 
   return (
     <ImageBackground
-      source={HOME_BG}
+      source={require('../../assets/images/home-bg.png')}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <SafeAreaView style={styles.safe}>
         {/* ── Hero Header ── */}
         <View style={styles.heroHeader}>
           <View style={styles.heroTopRow}>
@@ -51,8 +47,8 @@ export default function ReviewBookingScreen() {
               <ArrowLeft size={20} color="#FF6B00" />
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
-              <Text style={styles.heroTitle}>{t('confirm')}</Text>
-              <Text style={styles.heroSubtitle}>{t('confirmVehicle')}</Text>
+              <Text style={styles.heroTitle}>Review Booking</Text>
+              <Text style={styles.heroSubtitle}>Check everything before you pay</Text>
             </View>
           </View>
         </View>
@@ -113,11 +109,6 @@ export default function ReviewBookingScreen() {
                   <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{scheduledSlot.label}</Text>
                   {scheduledSlot.desc && (
                     <Text style={[styles.rowSub, { color: colors.textSecondary }]}>{scheduledSlot.desc}</Text>
-                  )}
-                  {packagingOption && packagingOption.price > 0 && (
-                    <Text style={[styles.rowSub, { color: colors.textSecondary }]}>
-                      {packagingOption.label} · +₹{packagingOption.price}
-                    </Text>
                   )}
                 </View>
               </View>
@@ -211,23 +202,14 @@ export default function ReviewBookingScreen() {
               <Text style={styles.fareBreakLabel}>Taxes & charges</Text>
               <Text style={styles.fareBreakValue}>₹{Math.round(estimatedFare * 0.10)}</Text>
             </View>
-            {packagingOption && packagingOption.price > 0 && (
-              <>
-                <View style={styles.fareBreakDivider} />
-                <View style={styles.fareBreakRow}>
-                  <Text style={styles.fareBreakLabel}>{packagingOption.label}</Text>
-                  <Text style={styles.fareBreakValue}>₹{packagingOption.price}</Text>
-                </View>
-              </>
-            )}
             <View style={styles.fareTotalRow}>
               <Text style={styles.fareLabel}>Total Estimated Fare</Text>
-              <Text style={styles.fareValue}>₹{estimatedFare + (packagingOption?.price ?? 0)}</Text>
+              <Text style={styles.fareValue}>₹{estimatedFare}</Text>
             </View>
           </View>
 
           <Button
-            label={t('confirm')}
+            label="Confirm & Proceed to Payment"
             onPress={handleConfirm}
             style={styles.confirmBtn}
             accessibilityLabel="Confirm booking and proceed to payment"
@@ -238,9 +220,9 @@ export default function ReviewBookingScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  backgroundImage: { flex: 1, width: '100%', height: '100%' },
+  backgroundImage: { flex: 1 },
 
   heroHeader: {
     paddingHorizontal: 20,
@@ -249,7 +231,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
     overflow: 'hidden',
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     marginBottom: 16,
   },
 
@@ -263,9 +245,9 @@ const makeStyles = (colors: any) => StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: colors.iconBorder,
+    borderColor: '#FFD6B3',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -279,7 +261,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
   heroSubtitle: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: '#666',
     fontWeight: '500',
     marginTop: 2,
   },
@@ -292,11 +274,11 @@ const makeStyles = (colors: any) => StyleSheet.create({
   },
 
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 18,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: '#FFE8D6',
     shadowColor: '#FF6B00',
     shadowOpacity: 0.08,
     shadowRadius: 16,
@@ -308,7 +290,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   cardLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: colors.placeholder,
+    color: '#9CA3AF',
     letterSpacing: 1.2,
     marginBottom: 4,
   },
@@ -319,7 +301,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -328,13 +310,13 @@ const makeStyles = (colors: any) => StyleSheet.create({
   rowTitle: { fontSize: 14, fontWeight: '700' },
   rowSub: { fontSize: 12, marginTop: 1 },
   rowValue: { fontSize: 13, fontWeight: '700', color: Colors.primary },
-  divider: { height: 1, backgroundColor: colors.cardBorder, marginLeft: 0 },
+  divider: { height: 1, backgroundColor: '#FFE8D6', marginLeft: 0 },
 
   phoneWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 10,
@@ -344,23 +326,22 @@ const makeStyles = (colors: any) => StyleSheet.create({
   descText: { fontSize: 13, lineHeight: 19, paddingTop: 2 },
 
   fareCard: {
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: colors.iconBorder,
+    borderColor: '#FFD6B3',
   },
   fareBreakRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
-  fareBreakLabel: { fontSize: 13, color: '#F59E0B' },
-  fareBreakValue: { fontSize: 13, fontWeight: '600', color: '#F59E0B' },
-  fareBreakDivider: { height: 1, backgroundColor: colors.iconBorder },
+  fareBreakLabel: { fontSize: 13, color: '#7C4A00' },
+  fareBreakValue: { fontSize: 13, fontWeight: '600', color: '#7C4A00' },
+  fareBreakDivider: { height: 1, backgroundColor: '#FFD6B3' },
   fareTotalRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    marginTop: 8, paddingTop: 12, borderTopWidth: 2, borderTopColor: colors.iconBorder,
+    marginTop: 8, paddingTop: 12, borderTopWidth: 2, borderTopColor: '#FFD6B3',
   },
-  fareLabel: { fontSize: 14, fontWeight: '700', color: '#F59E0B' },
+  fareLabel: { fontSize: 14, fontWeight: '700', color: '#7C4A00' },
   fareValue: { fontSize: 22, fontWeight: '800', color: Colors.primary },
 
   confirmBtn: { width: '100%' },
-})
-;
+});

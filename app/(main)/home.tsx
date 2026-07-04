@@ -20,18 +20,17 @@ import { useAuthStore } from '../../store/authStore';
 import { useBookingStore } from '../../store/bookingStore';
 import { useMapPickerStore } from '../../store/mapPickerStore';
 import { useComingSoon } from '../../components/common/ComingSoonModal';
-import { TurnOnLocationModal } from '../../components/common/TurnOnLocationModal';
+import { LocationPermissionModal } from '../../components/common/LocationPermissionModal';
+import { LocationDeniedFallback } from '../../components/common/LocationDeniedFallback';
 import { useLocation } from '../../hooks/useLocation';
 import { BannerCarousel } from '../../components/home/BannerCarousel';
 import { LocationCard } from '../../components/home/LocationCard';
 import { RecentBookings, SERVICE_TYPE_MAP } from '../../components/home/RecentBookings';
 import { MOCK_ORDERS, MOCK_NOTIFICATIONS } from '../../constants/mockData';
 import { ServiceType } from '../../store/bookingStore';
-import HOME_BG from '../../assets/bg/homeBg';
 
 export default function HomeScreen() {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
+  const { colors } = useTheme();
   const { t } = useLanguage();
   const { user } = useAuthStore();
   const { setPickup, setDrop, setServiceType } = useBookingStore();
@@ -39,6 +38,7 @@ export default function HomeScreen() {
   const { show: showComingSoon, modal } = useComingSoon();
   const {
     locationLabel,
+    permissionStatus,
     needsRationale,
     confirmRationale,
     dismissRationale,
@@ -117,13 +117,13 @@ export default function HomeScreen() {
 
   return (
     <ImageBackground
-      source={HOME_BG}
+      source={require('../../assets/images/home-bg.png')}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <SafeAreaView style={styles.safe}>
         {modal}
-        <TurnOnLocationModal
+        <LocationPermissionModal
           visible={needsRationale}
           onAllow={confirmRationale}
           onDeny={dismissRationale}
@@ -192,6 +192,20 @@ export default function HomeScreen() {
             </View>
           </View>
 
+          {/* ─── Location permission denied — manual entry fallback ── */}
+          {/* UX-HOME-009: never leave the user with no path forward when
+              location access isn't available. */}
+          {permissionStatus === 'denied' && !hasManualLocation && (
+            <View style={styles.locationFallbackWrap}>
+              <LocationDeniedFallback
+                compact
+                title="Set your location manually"
+                message="Location access is off, so we can't detect where you are. Enter your area to see nearby drivers and accurate fares."
+                onEnterManually={() => setShowManualEntry(true)}
+              />
+            </View>
+          )}
+
           {/* ─── Category Cards ──────────────────────────── */}
           <View style={styles.categoryRow}>
             {/* RIDE — sets serviceType to 'bike_taxi' as default, goes to pickup */}
@@ -232,12 +246,12 @@ export default function HomeScreen() {
               <Text style={styles.categoryTitle}>{t('categoryPackersMovers')}</Text>
             </TouchableOpacity>
 
-            {/* PARCEL — location first, then sender/receiver/goods on next screen */}
+            {/* PARCEL — goes to parcel sub-options */}
             <TouchableOpacity
               style={styles.categoryCard}
               onPress={() => {
                 setServiceType('parcel');
-                router.push('/(booking)/parcel-location');
+                router.push('/(booking)/parcel');
               }}
             >
               <Image source={require('../../assets/images/parcel.png')} style={styles.categoryImage} />
@@ -260,79 +274,78 @@ export default function HomeScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  backgroundImage: { flex: 1, width: '100%', height: '100%' },
+  backgroundImage: { flex: 1 },
   scroll: { gap: Spacing.lg, paddingBottom: 20 },
+  locationFallbackWrap: { paddingHorizontal: 16 },
 
   heroGradient: {
     paddingTop: 16, paddingBottom: 36, paddingHorizontal: 20,
     borderBottomLeftRadius: 36, borderBottomRightRadius: 36,
     overflow: 'hidden', position: 'relative',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255,255,255,0.15)',
   },
   decorCircle1: {
     position: 'absolute', width: 200, height: 200, borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.04)', top: -60, right: -40,
+    backgroundColor: 'rgba(255,255,255,0.08)', top: -60, right: -40,
   },
   decorCircle2: {
     position: 'absolute', width: 120, height: 120, borderRadius: 60,
-    backgroundColor: 'rgba(255,255,255,0.04)', bottom: -20, left: 40,
+    backgroundColor: 'rgba(255,255,255,0.06)', bottom: -20, left: 40,
   },
   decorCircle3: {
     position: 'absolute', width: 80, height: 80, borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.03)', top: 60, right: 100,
+    backgroundColor: 'rgba(255,255,255,0.05)', top: 60, right: 100,
   },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   greetingCol: { flex: 1, paddingRight: 12, gap: 4 },
-  welcomeLabel: { fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
-  greeting: { fontSize: 26, fontWeight: '800', color: colors.textPrimary, letterSpacing: -0.5 },
+  welcomeLabel: { fontSize: 13, color: '#666', fontWeight: '500' },
+  greeting: { fontSize: 26, fontWeight: '800', color: '#1A1A1A', letterSpacing: -0.5 },
   locationPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.surface,
+    flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFF',
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, alignSelf: 'flex-start',
     marginTop: 4, borderWidth: 1, borderColor: '#FF6B00',
   },
-  locationText: { fontSize: 12, color: colors.textPrimary, fontWeight: '500' },
+  locationText: { fontSize: 12, color: '#333', fontWeight: '500' },
   topActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   topActionBtn: {
-    width: 42, height: 42, borderRadius: 21, backgroundColor: colors.surface,
+    width: 42, height: 42, borderRadius: 21, backgroundColor: '#FFF',
     justifyContent: 'center', alignItems: 'center',
-    shadowColor: colors.textPrimary, shadowOpacity: 0.1, shadowRadius: 6,
+    shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 }, elevation: 4,
   },
   notificationButton: {
-    width: 46, height: 46, borderRadius: 23, backgroundColor: colors.surface,
+    width: 46, height: 46, borderRadius: 23, backgroundColor: '#FFF',
     justifyContent: 'center', alignItems: 'center',
-    shadowColor: colors.textPrimary, shadowOpacity: 0.15, shadowRadius: 8,
+    shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 }, elevation: 6,
   },
   bellDot: {
     position: 'absolute', top: 9, right: 9, width: 9, height: 9,
-    borderRadius: 5, backgroundColor: '#D32F2F', borderWidth: 2, borderColor: colors.surface,
+    borderRadius: 5, backgroundColor: '#D32F2F', borderWidth: 2, borderColor: '#FFF',
   },
   heroTagline: { marginTop: 22, gap: 4 },
   heroTitle: { fontSize: 22, fontWeight: '800', color: '#FF6B00', letterSpacing: -0.3, lineHeight: 30 },
   trustPills: { flexDirection: 'row', gap: 8, marginTop: 12 },
   trustPill: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: colors.surface, paddingHorizontal: 10, paddingVertical: 5,
+    backgroundColor: '#FFF', paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: 20, borderColor: '#FF6B00',
   },
   trustPillText: { fontSize: 12, fontWeight: '700', color: '#FF6B00' },
   searchIconWrap: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
-  searchHint: { flex: 1, fontSize: 15, color: colors.placeholder, fontWeight: '400' },
+  searchHint: { flex: 1, fontSize: 15, color: '#9CA3AF', fontWeight: '400' },
   searchArrow: {
-    width: 32, height: 32, borderRadius: 16, backgroundColor: colors.iconBg,
+    width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFF0E6',
     justifyContent: 'center', alignItems: 'center',
   },
 
   categoryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16 },
   categoryCard: {
-    width: '48%', backgroundColor: colors.surface, borderRadius: 24, padding: 16,
+    width: '48%', backgroundColor: '#FFF', borderRadius: 24, padding: 16,
     alignItems: 'center', borderWidth: 1, borderColor: '#FF6B00',
-    overflow: 'hidden',
   },
-  categoryImage: { width: '100%', maxWidth: 160, height: 100, resizeMode: 'contain' },
-  categoryTitle: { marginTop: 10, fontSize: 18, fontWeight: '700', color: colors.textPrimary },
-})
-;
+  categoryImage: { width: 180, height: 100, resizeMode: 'contain' },
+  categoryTitle: { marginTop: 10, fontSize: 18, fontWeight: '700', color: '#222' },
+});

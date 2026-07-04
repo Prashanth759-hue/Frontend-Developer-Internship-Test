@@ -8,9 +8,7 @@ import { router } from 'expo-router';
 import { ArrowLeft, Copy, Check, Users, Gift, Share2 } from 'lucide-react-native';
 import { Colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
-import { useLanguage } from '../theme/LanguageContext';
 import { useComingSoon } from '../components/common/ComingSoonModal';
-import HOME_BG from '../assets/bg/homeBg';
 
 const REFERRAL_CODE = 'RAVI100';
 const HOW_IT_WORKS = [
@@ -20,9 +18,7 @@ const HOW_IT_WORKS = [
 ];
 
 export default function ReferralScreen() {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
-  const { t } = useLanguage();
+  const { colors } = useTheme();
   const { show: showComingSoon, modal } = useComingSoon();
   const [copied, setCopied] = useState(false);
 
@@ -34,11 +30,11 @@ export default function ReferralScreen() {
 
   return (
     <ImageBackground
-      source={HOME_BG}
+      source={require('../assets/images/home-bg.png')}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <SafeAreaView style={styles.safe}>
         {modal}
 
         {/* Hero */}
@@ -50,9 +46,9 @@ export default function ReferralScreen() {
             <View style={styles.heroIcon}>
               <Gift size={36} color="#FFF" />
             </View>
-            <Text style={styles.heroTitle}>{t('referEarn')}</Text>
+            <Text style={styles.heroTitle}>Refer & Earn</Text>
             <Text style={styles.heroSubtitle}>
-              {t('referDesc')}
+              Invite friends and earn ₹100 for every successful referral!
             </Text>
           </View>
         </View>
@@ -115,7 +111,7 @@ export default function ReferralScreen() {
 
           {/* T&C note */}
           <Text style={styles.tnc}>
-            {t('referNote')}
+            *Rewards are credited after your friend completes their first ride. Valid for new users only.
           </Text>
         </ScrollView>
       </SafeAreaView>
@@ -123,18 +119,18 @@ export default function ReferralScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
-  backgroundImage: { flex: 1, width: '100%', height: '100%' },
+const styles = StyleSheet.create({
+  backgroundImage: { flex: 1 },
   safe: { flex: 1, backgroundColor: 'transparent' },
 
   heroHeader: {
     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 28,
     borderBottomLeftRadius: 36, borderBottomRightRadius: 36,
-    overflow: 'hidden', backgroundColor: colors.surfaceElevated, marginBottom: 16,
+    overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.18)', marginBottom: 16,
   },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: colors.iconBorder, justifyContent: 'center', alignItems: 'center',
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF',
+    borderWidth: 1, borderColor: '#FFD6B3', justifyContent: 'center', alignItems: 'center',
     alignSelf: 'flex-start', marginBottom: 16,
   },
   heroCenter: { alignItems: 'center', gap: 10 },
@@ -146,7 +142,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   },
   heroTitle: { fontSize: 28, fontWeight: '800', color: '#FF6B00', letterSpacing: -0.5 },
   heroSubtitle: {
-    fontSize: 14, color: colors.textSecondary, fontWeight: '500',
+    fontSize: 14, color: '#555', fontWeight: '500',
     textAlign: 'center', lineHeight: 20, maxWidth: 280,
   },
 
@@ -154,32 +150,32 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
   earningsRow: { flexDirection: 'row', gap: 10 },
   earningCard: {
-    flex: 1, backgroundColor: colors.surface, borderRadius: 20, paddingVertical: 16,
+    flex: 1, backgroundColor: '#FFFFFF', borderRadius: 20, paddingVertical: 16,
     alignItems: 'center', borderWidth: 1, borderColor: '#FF6B00',
     shadowColor: '#FF6B00', shadowOpacity: 0.08, shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 }, elevation: 4,
   },
   earningValue: { fontSize: 20, fontWeight: '800', color: '#FF6B00' },
-  earningLabel: { fontSize: 11, color: colors.textSecondary, marginTop: 3, fontWeight: '500' },
+  earningLabel: { fontSize: 11, color: '#666', marginTop: 3, fontWeight: '500' },
 
   card: {
-    backgroundColor: colors.surface, borderRadius: 24, padding: 18,
-    borderWidth: 1, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18,
+    borderWidth: 1, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.08, shadowRadius: 16,
     shadowOffset: { width: 0, height: 6 }, elevation: 6, gap: 14,
   },
-  cardLabel: { fontSize: 10, fontWeight: '700', color: colors.placeholder, letterSpacing: 1.2 },
+  cardLabel: { fontSize: 10, fontWeight: '700', color: '#9CA3AF', letterSpacing: 1.2 },
 
   codeBox: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: colors.iconBg, borderRadius: 16, padding: 14,
+    backgroundColor: '#FFF0E6', borderRadius: 16, padding: 14,
     borderWidth: 1.5, borderColor: '#FF6B00', borderStyle: 'dashed',
   },
   codeText: { flex: 1, fontSize: 22, fontWeight: '800', color: '#FF6B00', letterSpacing: 2 },
   copyBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: colors.surface, paddingHorizontal: 12, paddingVertical: 8,
-    borderRadius: 12, borderWidth: 1, borderColor: colors.iconBorder,
+    backgroundColor: '#FFF', paddingHorizontal: 12, paddingVertical: 8,
+    borderRadius: 12, borderWidth: 1, borderColor: '#FFD6B3',
   },
   copyBtnText: { fontSize: 13, fontWeight: '700', color: '#FF6B00' },
 
@@ -187,19 +183,18 @@ const makeStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 8, backgroundColor: '#FF6B00', borderRadius: 18, paddingVertical: 14,
   },
-  shareBtnText: { fontSize: 16, fontWeight: '700', color: colors.surface },
+  shareBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
 
   stepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, paddingBottom: 14 },
-  stepRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.cardBorder },
+  stepRowBorder: { borderBottomWidth: 1, borderBottomColor: '#FFE8D6' },
   stepCircle: {
-    width: 46, height: 46, borderRadius: 23, backgroundColor: colors.iconBg,
-    justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.iconBorder,
+    width: 46, height: 46, borderRadius: 23, backgroundColor: '#FFF0E6',
+    justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#FFD6B3',
   },
   stepEmoji: { fontSize: 20 },
   stepInfo: { flex: 1, gap: 3 },
   stepTitle: { fontSize: 15, fontWeight: '700' },
   stepDesc: { fontSize: 13, lineHeight: 18 },
 
-  tnc: { fontSize: 11, color: colors.placeholder, textAlign: 'center', lineHeight: 16 },
-})
-;
+  tnc: { fontSize: 11, color: '#9CA3AF', textAlign: 'center', lineHeight: 16 },
+});

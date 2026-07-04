@@ -19,7 +19,6 @@ import {
   CreditCard,
   Globe,
   Sun,
-  Moon,
   HelpCircle,
   FileText,
   LogOut,
@@ -40,7 +39,8 @@ import { useComingSoon } from '../../components/common/ComingSoonModal';
 import { clearAllSecureData } from '../../constants/storage';
 import { LANGUAGES } from '../../constants/mockData';
 import { Button } from '../../components/common/Button';
-import HOME_BG from '../../assets/bg/homeBg';
+
+type ThemeMode = 'light' | 'dark' | 'auto';
 
 function MenuRow({
   icon,
@@ -55,8 +55,7 @@ function MenuRow({
   danger?: boolean;
   value?: string;
 }) {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
+  const { colors } = useTheme();
   return (
     <TouchableOpacity
       style={[styles.menuRow, { borderBottomColor: colors.divider }]}
@@ -64,7 +63,7 @@ function MenuRow({
       accessibilityLabel={label}
       accessibilityRole="menuitem"
     >
-      <View style={[styles.menuIcon, { backgroundColor: danger ? colors.surfaceElevated : colors.iconBg }]}>
+      <View style={[styles.menuIcon, { backgroundColor: danger ? Colors.dangerLight : Colors.primaryLight }]}>
         {icon}
       </View>
       <Text style={[styles.menuLabel, { color: danger ? Colors.danger : colors.textPrimary }]}>
@@ -81,12 +80,13 @@ function MenuRow({
 }
 
 export default function ProfileScreen() {
-  const { colors, isDark, toggleMode } = useTheme();
-  const styles = makeStyles(colors);
+  const { colors } = useTheme();
+  const { mode: themeMode, setMode } = useTheme();
   const { lang: selectedLang, setLang, t } = useLanguage();
   const { user, logout } = useAuthStore();
   const { show: showComingSoon, modal } = useComingSoon();
   const [showLangModal, setShowLangModal] = useState(false);
+  const [showThemeModal, setShowThemeModal] = useState(false);
 
   const handleLogout = () => {
     const doLogout = async () => {
@@ -111,10 +111,13 @@ export default function ProfileScreen() {
     }
   };
 
-  // A single direct toggle — always shows the action that will happen if
-  // tapped, not the current state (so it reads "Switch to Dark theme"
-  // while in light mode, and "Switch to Light theme" while in dark mode).
-  const themeToggleLabel = isDark ? t('switchToLightTheme') : t('switchToDarkTheme');
+  const themeLabel = themeMode === 'light' ? t('themeLight') : themeMode === 'dark' ? t('themeDark') : t('themeAuto');
+
+  const THEME_OPTIONS: { label: string; value: ThemeMode; emoji: string }[] = [
+    { label: t('themeLight'), value: 'light', emoji: '☀️' },
+    { label: t('themeDark'), value: 'dark', emoji: '🌙' },
+    { label: t('themeAuto'), value: 'auto', emoji: '⚙️' },
+  ];
 
   const initials = user?.name
     ?.trim()
@@ -126,25 +129,24 @@ export default function ProfileScreen() {
 
   return (
   <ImageBackground
-    source={HOME_BG}
+    source={require('../../assets/images/home-bg.png')}
     style={styles.backgroundImage}
     resizeMode="cover"
   >
-    <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
-
+    <SafeAreaView style={styles.safe}>
       {modal}
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
-        <View style={[styles.heroHeader, { backgroundColor: isDark ? colors.surfaceElevated : 'rgba(255,255,255,0.15)' }]}>
-          <Text style={[styles.heroTitle, { color: Colors.primary }]}>{t('myProfile')}</Text>
+        <View style={styles.heroHeader}>
+          <Text style={styles.heroTitle}>{t('myProfile')}</Text>
 
-          <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
+          <Text style={styles.heroSubtitle}>
             {t('manageAccount')}
           </Text>
 
-          <View style={[styles.avatarCard, { backgroundColor: colors.surface }]}>
+          <View style={styles.avatarCard}>
             <View style={styles.avatar}>
               {user?.avatar ? (
                 <Image source={{ uri: user.avatar }} style={{ width: 68, height: 68, borderRadius: 34 }} />
@@ -154,18 +156,18 @@ export default function ProfileScreen() {
             </View>
 
             <View style={styles.userInfo}>
-              <Text style={[styles.userName, { color: colors.textPrimary }]}>
+              <Text style={styles.userName}>
                 {user?.name ?? 'User'}
               </Text>
 
-              <Text style={[styles.userPhone, { color: colors.textSecondary }]}>
+              <Text style={styles.userPhone}>
                 +91 {user?.phone ?? '—'}
               </Text>
             </View>
 
             <TouchableOpacity
               onPress={() => router.push('/edit-profile')}
-              style={[styles.editBtn, { backgroundColor: colors.inputBackground }]}
+              style={styles.editBtn}
             >
               <Edit2 size={16} color="#FF6B00" />
             </TouchableOpacity>
@@ -181,7 +183,7 @@ export default function ProfileScreen() {
           />
           <MenuRow
             icon={<Bell size={18} color={Colors.primary} />}
-            label={t('notifications')}
+            label="Notifications"
             onPress={() => router.push('/(main)/notifications')}
           />
           <MenuRow
@@ -195,9 +197,10 @@ export default function ProfileScreen() {
             onPress={() => setShowLangModal(true)}
           />
           <MenuRow
-            icon={isDark ? <Sun size={18} color={Colors.primary} /> : <Moon size={18} color={Colors.primary} />}
-            label={themeToggleLabel}
-            onPress={toggleMode}
+            icon={<Sun size={18} color={Colors.primary} />}
+            label={t('theme')}
+            value={themeLabel}
+            onPress={() => setShowThemeModal(true)}
           />
           <MenuRow
             icon={<HelpCircle size={18} color={Colors.primary} />}
@@ -211,7 +214,7 @@ export default function ProfileScreen() {
           />
           <MenuRow
             icon={<Users size={18} color={Colors.primary} />}
-            label={t('referEarn')}
+            label="Refer & Earn"
             onPress={() => router.push('/referral')}
           />
         </View>
@@ -260,16 +263,42 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Theme modal */}
+      <Modal visible={showThemeModal} transparent animationType="slide" onRequestClose={() => setShowThemeModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.bottomSheet, { backgroundColor: colors.surface }]}>
+            <View style={styles.sheetHandle} />
+            <Text style={[styles.sheetTitle, { color: colors.textPrimary }]}>{t('selectTheme')}</Text>
+            {THEME_OPTIONS.map((opt) => (
+              <TouchableOpacity
+                key={opt.value}
+                style={[styles.langRow, { borderBottomColor: colors.divider }]}
+                onPress={() => { setMode(opt.value); setShowThemeModal(false); }}
+                accessibilityLabel={`Select ${opt.label} theme`}
+              >
+                <Text style={[styles.langLabel, { color: colors.textPrimary }]}>
+                  {opt.emoji}  {opt.label}
+                </Text>
+                {themeMode === opt.value && (
+                  <View style={styles.checkCircle}>
+                    <Check size={14} color={Colors.white} />
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+            <Button label={t('done')} onPress={() => setShowThemeModal(false)} style={{ marginTop: 16 }} />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
     </ImageBackground>
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   backgroundImage: {
   flex: 1,
-  width: '100%',
-  height: '100%',
 },
 
 safe: {
@@ -287,7 +316,7 @@ safe: {
 
   overflow: 'hidden',
 
-  backgroundColor: 'rgba(255,255,255,0.04)',
+  backgroundColor: 'rgba(255,255,255,0.15)',
 
   marginBottom: 16,
 },
@@ -302,9 +331,12 @@ heroTitle: {
 heroSubtitle: {
   marginTop: 4,
   fontSize: 13,
+  color: '#666',
   fontWeight: '500',
 },
   avatarCard: {
+  backgroundColor: '#FFFFFF',
+
   borderRadius: 24,
 
   borderWidth: 1,
@@ -343,16 +375,18 @@ heroSubtitle: {
 avatarText: {
   fontSize: 22,
   fontWeight: '800',
-  color: colors.surface,
+  color: '#FFFFFF',
 },
   userInfo: { flex: 1 },
   userName: {
   fontSize: 18,
   fontWeight: '800',
+  color: '#1A1A1A',
 },
 
 userPhone: {
   fontSize: 13,
+  color: '#666',
   marginTop: 3,
 },
   editBtn: {
@@ -360,6 +394,8 @@ userPhone: {
   height: 42,
 
   borderRadius: 21,
+
+  backgroundColor: '#FFF0E6',
 
   justifyContent: 'center',
   alignItems: 'center',
@@ -374,7 +410,7 @@ userPhone: {
 
   overflow: 'hidden',
 
-  backgroundColor: colors.surface,
+  backgroundColor: '#FFFFFF',
 
   borderWidth: 1,
   borderColor: '#FF6B00',
@@ -404,7 +440,7 @@ userPhone: {
 
   borderRadius: 21,
 
-  backgroundColor: colors.iconBg,
+  backgroundColor: '#FFF0E6',
 
   justifyContent: 'center',
   alignItems: 'center',
@@ -427,7 +463,7 @@ userPhone: {
   marginBottom: 30,
 
   fontSize: 12,
-  color: colors.textSecondary,
+  color: '#666',
 },
   modalOverlay: {
     flex: 1,
@@ -443,7 +479,7 @@ userPhone: {
 
   gap: 4,
 
-  backgroundColor: colors.surface,
+  backgroundColor: '#FFFFFF',
 },
   sheetHandle: {
     width: 40,
@@ -475,5 +511,4 @@ userPhone: {
   justifyContent: 'center',
   alignItems: 'center',
 },
-})
-;
+});

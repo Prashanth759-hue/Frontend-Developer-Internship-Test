@@ -15,26 +15,22 @@ import { Colors } from '../../theme/colors';
 import { Typography } from '../../theme/typography';
 import { Spacing, Layout, BorderRadius, Shadow } from '../../theme/spacing';
 import { useTheme } from '../../theme/ThemeContext';
-import { useLanguage } from '../../theme/LanguageContext';
 import { Button } from '../../components/common/Button';
 import { EmptyState } from '../../components/common/EmptyState';
 import { useComingSoon } from '../../components/common/ComingSoonModal';
 import { MOCK_TRANSACTIONS } from '../../constants/mockData';
-import HOME_BG from '../../assets/bg/homeBg';
 
 export default function WalletScreen() {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
-  const { t } = useLanguage();
+  const { colors } = useTheme();
   const { show: showComingSoon, modal } = useComingSoon();
 
   return (
     <ImageBackground
-    source={HOME_BG}
+    source={require('../../assets/images/home-bg.png')}
     style={styles.backgroundImage}
     resizeMode="cover"
   >
-    <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+    <SafeAreaView style={styles.safe}>
       {modal}
 
       <FlatList
@@ -46,28 +42,28 @@ export default function WalletScreen() {
           <>
             {/* Hero Header */}
             <View style={styles.heroHeader}>
-              <Text style={styles.heroTitle}>{t('vahanPay')}</Text>
+              <Text style={styles.heroTitle}>Vahan Pay</Text>
               <Text style={styles.heroSubtitle}>
-                {t('walletSubtitle')}
+                Fast & secure wallet payments
               </Text>
 
               {/* Wallet Stats */}
               <View style={styles.statsRow}>
                 <View style={styles.statCard}>
                   <Text style={styles.statValue}>₹0</Text>
-                  <Text style={styles.statLabel}>{t('walletBalance')}</Text>
+                  <Text style={styles.statLabel}>Balance</Text>
                 </View>
 
                 <View style={styles.statCard}>
                   <Text style={styles.statValue}>0</Text>
-                  <Text style={styles.statLabel}>{t('walletCoins')}</Text>
+                  <Text style={styles.statLabel}>Coins</Text>
                 </View>
 
                 <View style={styles.statCard}>
                   <Text style={styles.statValue}>
                     {MOCK_TRANSACTIONS.length}
                   </Text>
-                  <Text style={styles.statLabel}>{t('walletTransactions')}</Text>
+                  <Text style={styles.statLabel}>Transactions</Text>
                 </View>
               </View>
             </View>
@@ -82,7 +78,7 @@ export default function WalletScreen() {
               >
                 <View style={styles.balanceTop}>
                   <View>
-                    <Text style={styles.balanceLabel}>{t('totalBalance')}</Text>
+                    <Text style={styles.balanceLabel}>Total Balance</Text>
                     <Text style={styles.balanceAmount}>₹0.00</Text>
                   </View>
 
@@ -92,7 +88,7 @@ export default function WalletScreen() {
                 </View>
 
                 <Button
-                  label={t('addMoney')}
+                  label="Add Money"
                   onPress={() => router.push('/add-money')}
                   style={styles.addBtn}
                   variant="secondary"
@@ -110,7 +106,7 @@ export default function WalletScreen() {
                 </View>
 
                 <View style={styles.coinsInfo}>
-                  <Text style={styles.coinsTitle}>{t('vahanPay')} Coins</Text>
+                  <Text style={styles.coinsTitle}>Vahan Coins</Text>
                   <Text style={styles.coinsValue}>
                     0 coins available
                   </Text>
@@ -124,14 +120,14 @@ export default function WalletScreen() {
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.txnTitle}>{t('walletTransactions')}</Text>
+              <Text style={styles.txnTitle}>Transactions</Text>
             </View>
           </>
         }
         ListEmptyComponent={
           <EmptyState
-            title={t('noTransactions')}
-            subtitle={t('noTransactionsDesc')}
+            title="No transactions yet"
+            subtitle="Your wallet history will appear here."
           />
         }
         renderItem={({ item }) => (
@@ -142,8 +138,8 @@ export default function WalletScreen() {
                 {
                   backgroundColor:
                     item.type === 'credit'
-                      ? colors.surfaceElevated
-                      : colors.iconBg,
+                      ? Colors.successLight
+                      : Colors.primaryLight,
                 },
               ]}
             >
@@ -166,7 +162,7 @@ export default function WalletScreen() {
                   color:
                     item.type === 'credit'
                       ? Colors.success
-                      : colors.textPrimary,
+                      : '#111827',
                 },
               ]}
             >
@@ -181,11 +177,9 @@ export default function WalletScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
-    width: '100%',
-    height: '100%',
   },
 
   safe: {
@@ -207,20 +201,20 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
     overflow: 'hidden',
 
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255,255,255,0.15)',
   },
 
   heroTitle: {
     fontSize: 28,
     fontWeight: '800',
-    color: colors.textPrimary,
+    color: '#000000',
     letterSpacing: -0.5,
   },
 
   heroSubtitle: {
     marginTop: 4,
     fontSize: 13,
-    color: colors.textSecondary,
+    color: '#666',
     fontWeight: '500',
   },
 
@@ -234,7 +228,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   statCard: {
     flex: 1,
 
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFF',
 
     borderRadius: 24,
 
@@ -265,7 +259,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   statLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: '#666',
     marginTop: 2,
   },
 
@@ -308,7 +302,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   balanceAmount: {
     fontSize: 34,
     fontWeight: '800',
-    color: colors.surface,
+    color: '#FFF',
   },
 
   walletIconWrap: {
@@ -316,7 +310,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     height: 48,
     borderRadius: 24,
 
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
 
     justifyContent: 'center',
     alignItems: 'center',
@@ -333,7 +327,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
 
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFF',
 
     borderRadius: 24,
 
@@ -360,7 +354,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     height: 44,
     borderRadius: 22,
 
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
 
     justifyContent: 'center',
     alignItems: 'center',
@@ -374,17 +368,17 @@ const makeStyles = (colors: any) => StyleSheet.create({
   coinsTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: '#222',
   },
 
   coinsValue: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: '#666',
     marginTop: 2,
   },
 
   redeemBtn: {
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
 
     borderRadius: 20,
 
@@ -415,7 +409,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
 
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFF',
 
     borderRadius: 24,
 
@@ -455,12 +449,12 @@ const makeStyles = (colors: any) => StyleSheet.create({
   txnLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: '#222',
   },
 
   txnDate: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: '#777',
     marginTop: 2,
   },
 
@@ -474,5 +468,4 @@ const makeStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-})
-;
+});

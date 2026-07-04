@@ -14,11 +14,9 @@ import { router } from 'expo-router';
 import { ArrowLeft, Clock, Check, Users } from 'lucide-react-native';
 import { Colors } from '../../theme/colors';
 import { useTheme } from '../../theme/ThemeContext';
-import { useLanguage } from '../../theme/LanguageContext';
 import { Button } from '../../components/common/Button';
 import { useBookingStore } from '../../store/bookingStore';
 import { PACKERS_MOVERS_PACKAGES, PACKING_MATERIAL_PRICE } from '../../constants/mockData';
-import HOME_BG from '../../assets/bg/homeBg';
 
 const PACKAGE_IMAGES: Record<string, ImageSourcePropType> = {
   mini_truck: require('../../assets/images/icon-mini-truck.png'),
@@ -26,9 +24,7 @@ const PACKAGE_IMAGES: Record<string, ImageSourcePropType> = {
 };
 
 export default function PackersMoversVehicleScreen() {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
-  const { t } = useLanguage();
+  const { colors } = useTheme();
   const { setSelectedVehicle, setEstimatedFare, setHelperCount } = useBookingStore();
   const [selected, setSelected] = useState<string | null>(null);
   const [packingMaterial, setPackingMaterial] = useState(false);
@@ -48,11 +44,11 @@ export default function PackersMoversVehicleScreen() {
 
   return (
     <ImageBackground
-      source={HOME_BG}
+      source={require('../../assets/images/home-bg.png')}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <SafeAreaView style={styles.safe}>
         {/* ── Hero Header ── */}
         <View style={styles.heroHeader}>
           <View style={styles.heroTopRow}>
@@ -64,7 +60,7 @@ export default function PackersMoversVehicleScreen() {
               <ArrowLeft size={20} color="#FF6B00" />
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
-              <Text style={styles.heroTitle}>{t('chooseVehicle')}</Text>
+              <Text style={styles.heroTitle}>Choose Your Package</Text>
               <Text style={styles.heroSubtitle}>Select based on home or office size</Text>
             </View>
           </View>
@@ -165,7 +161,7 @@ export default function PackersMoversVehicleScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: 'transparent',
@@ -173,8 +169,6 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
   backgroundImage: {
     flex: 1,
-    width: '100%',
-    height: '100%',
   },
 
   heroHeader: {
@@ -187,7 +181,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
     overflow: 'hidden',
 
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: 'rgba(255,255,255,0.18)',
 
     marginBottom: 16,
   },
@@ -204,10 +198,10 @@ const makeStyles = (colors: any) => StyleSheet.create({
     height: 40,
     borderRadius: 20,
 
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
 
     borderWidth: 1,
-    borderColor: colors.iconBorder,
+    borderColor: '#FFD6B3',
 
     justifyContent: 'center',
     alignItems: 'center',
@@ -222,7 +216,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
   heroSubtitle: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: '#666',
     fontWeight: '500',
     marginTop: 2,
   },
@@ -233,7 +227,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   },
 
   chip: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
@@ -259,9 +253,9 @@ const makeStyles = (colors: any) => StyleSheet.create({
     gap: 14,
     borderRadius: 24,
     padding: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
-    borderColor: colors.cardBorder,
+    borderColor: '#FFE8D6',
     shadowColor: '#FF6B00',
     shadowOpacity: 0.07,
     shadowRadius: 12,
@@ -272,7 +266,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   vehicleCardActive: {
     borderColor: Colors.primary,
     borderWidth: 2,
-    backgroundColor: colors.subtleBg,
+    backgroundColor: '#FFF7F2',
   },
 
   vehicleImage: {
@@ -307,7 +301,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
@@ -334,7 +328,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   fareText: {
     fontSize: 20,
     fontWeight: '800',
-    color: colors.textPrimary,
+    color: '#1A1A1A',
   },
 
   fareTextActive: {
@@ -360,11 +354,11 @@ const makeStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 16,
     borderWidth: 1.5,
-    borderColor: colors.cardBorder,
+    borderColor: '#FFE8D6',
     shadowColor: '#FF6B00',
     shadowOpacity: 0.07,
     shadowRadius: 12,
@@ -375,7 +369,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   packingCardActive: {
     borderColor: Colors.primary,
     borderWidth: 2,
-    backgroundColor: colors.subtleBg,
+    backgroundColor: '#FFF7F2',
   },
 
   packingImage: {
@@ -414,8 +408,8 @@ const makeStyles = (colors: any) => StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 1.5,
-    borderColor: colors.iconBorder,
-    backgroundColor: colors.inputBackground,
+    borderColor: '#FFD6B3',
+    backgroundColor: '#FAFAFA',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -424,5 +418,4 @@ const makeStyles = (colors: any) => StyleSheet.create({
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
   },
-})
-;
+});

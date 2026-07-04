@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ImageBackground, ScrollView,
+  ImageBackground, ScrollView, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Tag, Copy, CheckCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { Colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
-import { useBookingStore } from '../store/bookingStore';
-import HOME_BG from '../assets/bg/homeBg';
 
 interface Coupon {
   code: string;
@@ -89,8 +87,7 @@ function CouponCard({
   onApply: (code: string, discount: number, label: string) => void;
   applied: boolean;
 }) {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
+  const { colors } = useTheme();
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -162,30 +159,35 @@ function CouponCard({
 }
 
 export default function CouponListScreen() {
-  const { colors, isDark } = useTheme();
-  const styles = makeStyles(colors);
-  const { appliedCoupon, setAppliedCoupon } = useBookingStore();
-  const appliedCode = appliedCoupon?.code ?? null;
+  const { colors } = useTheme();
+  const { currentCode } = useLocalSearchParams<{ currentCode?: string }>();
+  const [appliedCode, setAppliedCode] = useState<string | null>(currentCode ?? null);
 
   const handleApply = (code: string, discount: number, label: string) => {
     if (appliedCode === code) {
-      // Tapping "Remove" on the currently-applied coupon clears it.
-      setAppliedCoupon(null);
+      setAppliedCode(null);
       return;
     }
-    // Write straight to the shared booking store so the fare screen picks
-    // up the applied coupon immediately — no Alert/manual re-typing needed.
-    setAppliedCoupon({ code, discount, label });
-    router.back();
+    setAppliedCode(code);
+    Alert.alert(
+      'Coupon Applied!',
+      `${code} applied. You save ${label}.`,
+      [
+        {
+          text: 'Continue',
+          onPress: () => router.back(),
+        },
+      ],
+    );
   };
 
   return (
     <ImageBackground
-      source={HOME_BG}
+      source={require('../assets/images/home-bg.png')}
       style={styles.bg}
       resizeMode="cover"
     >
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <SafeAreaView style={styles.safe}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
@@ -218,86 +220,85 @@ export default function CouponListScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
-  bg: { flex: 1, width: '100%', height: '100%' },
+const styles = StyleSheet.create({
+  bg: { flex: 1 },
   safe: { flex: 1, backgroundColor: 'transparent' },
 
   header: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24,
     borderBottomLeftRadius: 36, borderBottomRightRadius: 36,
-    backgroundColor: colors.surfaceElevated, marginBottom: 16,
+    backgroundColor: 'rgba(255,255,255,0.18)', marginBottom: 16,
   },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: colors.iconBorder, justifyContent: 'center', alignItems: 'center',
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFF',
+    borderWidth: 1, borderColor: '#FFD6B3', justifyContent: 'center', alignItems: 'center',
   },
   headerTitle: { fontSize: 22, fontWeight: '800', color: '#FF6B00' },
-  headerSub: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
+  headerSub: { fontSize: 12, color: '#666', marginTop: 2 },
 
   content: { paddingHorizontal: 16, paddingBottom: 40, gap: 12 },
 
   couponCard: {
-    backgroundColor: colors.surface, borderRadius: 20, padding: 16,
-    borderWidth: 1.5, borderColor: colors.cardBorder,
+    backgroundColor: '#FFF', borderRadius: 20, padding: 16,
+    borderWidth: 1.5, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.06, shadowRadius: 10,
     shadowOffset: { width: 0, height: 3 }, elevation: 3, gap: 10,
   },
   couponCardApplied: {
-    borderColor: '#16A34A', backgroundColor: colors.surfaceElevated,
+    borderColor: '#16A34A', backgroundColor: '#F0FDF4',
   },
 
   couponTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   couponLeft: { flex: 1, flexDirection: 'row', gap: 10 },
   tagIconWrap: {
     width: 38, height: 38, borderRadius: 19,
-    backgroundColor: colors.iconBg, justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: colors.iconBorder, flexShrink: 0,
+    backgroundColor: '#FFF0E6', justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: '#FFD6B3', flexShrink: 0,
   },
   codeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  couponCode: { fontSize: 16, fontWeight: '800', color: colors.textPrimary, letterSpacing: 0.5 },
+  couponCode: { fontSize: 16, fontWeight: '800', color: '#1A1A1A', letterSpacing: 0.5 },
   couponBenefit: { fontSize: 13, color: Colors.primary, fontWeight: '600', marginTop: 2 },
-  couponCategory: { fontSize: 11, color: colors.placeholder, marginTop: 2 },
+  couponCategory: { fontSize: 11, color: '#9CA3AF', marginTop: 2 },
 
   newBadge: {
-    backgroundColor: colors.surfaceElevated, paddingHorizontal: 7, paddingVertical: 2,
+    backgroundColor: '#DCFCE7', paddingHorizontal: 7, paddingVertical: 2,
     borderRadius: 8,
   },
-  newBadgeText: { fontSize: 10, fontWeight: '800', color: Colors.success },
+  newBadgeText: { fontSize: 10, fontWeight: '800', color: '#16A34A' },
   appliedBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: colors.surfaceElevated, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8,
+    backgroundColor: '#DCFCE7', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8,
   },
-  appliedBadgeText: { fontSize: 10, fontWeight: '800', color: Colors.success },
+  appliedBadgeText: { fontSize: 10, fontWeight: '800', color: '#16A34A' },
 
   applyBtn: {
     backgroundColor: Colors.primary, paddingHorizontal: 16, paddingVertical: 8,
     borderRadius: 14, alignSelf: 'flex-start', flexShrink: 0,
   },
-  applyBtnApplied: { backgroundColor: colors.surfaceElevated },
-  applyBtnText: { fontSize: 13, fontWeight: '700', color: colors.surface },
-  applyBtnTextApplied: { color: Colors.danger },
+  applyBtnApplied: { backgroundColor: '#FEE2E2' },
+  applyBtnText: { fontSize: 13, fontWeight: '700', color: '#FFF' },
+  applyBtnTextApplied: { color: '#EF4444' },
 
   expiryRow: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    borderTopWidth: 1, borderTopColor: colors.divider, paddingTop: 8,
+    borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 8,
   },
-  expiryText: { flex: 1, fontSize: 11, color: colors.placeholder },
+  expiryText: { flex: 1, fontSize: 11, color: '#9CA3AF' },
   termsBtn: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   termsBtnText: { fontSize: 11, fontWeight: '700', color: Colors.primary },
 
   termsBox: {
-    backgroundColor: colors.termsBg, borderRadius: 12, padding: 12, gap: 6,
-    borderWidth: 1, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFAF7', borderRadius: 12, padding: 12, gap: 6,
+    borderWidth: 1, borderColor: '#FFE8D6',
   },
   termRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
   termDot: {
     width: 5, height: 5, borderRadius: 3,
     backgroundColor: Colors.primary, marginTop: 6, flexShrink: 0,
   },
-  termText: { fontSize: 12, color: colors.textSecondary, lineHeight: 18, flex: 1 },
+  termText: { fontSize: 12, color: '#666', lineHeight: 18, flex: 1 },
 
   noMoreRow: { alignItems: 'center', paddingVertical: 20 },
-  noMoreText: { fontSize: 13, color: colors.placeholder },
-})
-;
+  noMoreText: { fontSize: 13, color: '#9CA3AF' },
+});

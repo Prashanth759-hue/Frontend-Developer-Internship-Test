@@ -111,7 +111,6 @@ export default function LocationSearchInput({
   containerStyle,
 }: Props) {
   const { colors } = useTheme();
-  const styles = makeStyles(colors);
   const [focused, setFocused] = useState(false);
   const [searching, setSearching] = useState(false);
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -407,7 +406,7 @@ export default function LocationSearchInput({
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   wrapper: {
     position: 'relative',
     zIndex: 10,
@@ -442,23 +441,23 @@ const makeStyles = (colors: any) => StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: colors.border,
+    backgroundColor: '#E5E7EB',
     justifyContent: 'center',
     alignItems: 'center',
     flexShrink: 0,
   },
   clearText: {
     fontSize: 10,
-    color: colors.placeholder,
+    color: '#6B7280',
     fontWeight: '700',
   },
 
   // ── Dropdown ──────────────────────────────────────────────────────────────────
   dropdown: {
     borderRadius: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: '#FFE8D6',
     shadowColor: '#FF6B00',
     shadowOpacity: 0.12,
     shadowRadius: 16,
@@ -478,17 +477,17 @@ const makeStyles = (colors: any) => StyleSheet.create({
     gap: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    backgroundColor: colors.subtleBg,
+    backgroundColor: '#FFF7F2',
   },
   mapIconWrap: {
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.iconBorder,
+    borderColor: '#FFD6B3',
   },
   mapRowTitle: {
     fontSize: 14,
@@ -497,13 +496,13 @@ const makeStyles = (colors: any) => StyleSheet.create({
   },
   mapRowSub: {
     fontSize: 11,
-    color: colors.placeholder,
+    color: '#9CA3AF',
     marginTop: 1,
   },
 
   divider: {
     height: 1,
-    backgroundColor: colors.cardBorder,
+    backgroundColor: '#FFE8D6',
     marginHorizontal: 14,
   },
 
@@ -523,19 +522,19 @@ const makeStyles = (colors: any) => StyleSheet.create({
     gap: 12,
     paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    borderBottomColor: '#F5F5F5',
   },
   suggestionIconWrap: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.inputBackground,
+    backgroundColor: '#F5F5F5',
     justifyContent: 'center',
     alignItems: 'center',
     flexShrink: 0,
   },
   savedIconWrap: {
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
   },
   suggestionName: {
     fontSize: 14,
@@ -543,24 +542,24 @@ const makeStyles = (colors: any) => StyleSheet.create({
   },
   suggestionCity: {
     fontSize: 11,
-    color: colors.placeholder,
+    color: '#9CA3AF',
     marginTop: 1,
   },
   suggestionDistance: {
     fontSize: 11,
     fontWeight: '600',
-    color: colors.placeholder,
+    color: '#9CA3AF',
     flexShrink: 0,
   },
 
   // ── Skeleton (loading) ──────────────────────────────────────────────────────
   skeletonBlock: {
-    backgroundColor: colors.skeleton,
+    backgroundColor: '#EFEFEF',
   },
   skeletonLine: {
     height: 11,
     borderRadius: 4,
-    backgroundColor: colors.skeleton,
+    backgroundColor: '#EFEFEF',
   },
 
   // ── No results ──────────────────────────────────────────────────────────────
@@ -573,12 +572,12 @@ const makeStyles = (colors: any) => StyleSheet.create({
   noResultsTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.placeholder,
+    color: '#6B7280',
     marginTop: 6,
   },
   noResultsText: {
     fontSize: 12,
-    color: colors.placeholder,
+    color: '#9CA3AF',
     textAlign: 'center',
     lineHeight: 17,
     marginBottom: 8,
@@ -598,7 +597,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   noResultsBtnText: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.placeholder,
+    color: '#6B7280',
   },
   noResultsBtnPrimary: {
     backgroundColor: Colors.primary,
@@ -606,6 +605,6 @@ const makeStyles = (colors: any) => StyleSheet.create({
   noResultsBtnPrimaryText: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.surface,
+    color: '#FFFFFF',
   },
 });

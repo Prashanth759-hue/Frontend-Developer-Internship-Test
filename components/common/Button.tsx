@@ -50,9 +50,7 @@ export function Button({
 
   const getContainerStyle = (): ViewStyle => {
     const base: ViewStyle = {
-      minHeight: size === 'sm' ? 44 : size === 'lg' ? 60 : Layout.buttonHeight,
-      paddingVertical: 10,
-      paddingHorizontal: 16,
+      height: size === 'sm' ? 44 : size === 'lg' ? 60 : Layout.buttonHeight,
       borderRadius: Layout.buttonRadius,
       justifyContent: 'center',
       alignItems: 'center',
@@ -98,14 +96,7 @@ export function Button({
       ) : (
         <>
           {icon}
-          <Text
-            style={[getTextStyle(), { flexShrink: 1, textAlign: 'center' }, textStyle]}
-            numberOfLines={2}
-            adjustsFontSizeToFit
-            minimumFontScale={0.8}
-          >
-            {label}
-          </Text>
+          <Text style={[getTextStyle(), textStyle]}>{label}</Text>
         </>
       )}
     </TouchableOpacity>

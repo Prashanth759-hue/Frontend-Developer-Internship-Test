@@ -105,7 +105,6 @@ import {
   MOCK_DRIVERS,
   MOCK_PROMOS,
 } from '../constants/mockData';
-import { API_BASE_URL, API_TIMEOUT_MS } from '../constants/apiConfig';
 
 // ── Helpers ──────────────────────────────────────────────
 
@@ -115,92 +114,27 @@ function mockOk<T>(data: T): ApiResponse<T> {
   return { success: true, data };
 }
 
-/**
- * Real backend call helper — POST/GET JSON with a timeout so the app fails
- * fast with a readable error instead of hanging if the phone can't reach
- * the backend (wrong IP, different WiFi, firewall, backend not running).
- */
-async function apiFetch<T = any>(
-  path: string,
-  options: { method?: 'GET' | 'POST' | 'PUT' | 'DELETE'; body?: any } = {}
-): Promise<T> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
-
-  try {
-    const res = await fetch(`${API_BASE_URL}${path}`, {
-      method: options.method ?? 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: options.body ? JSON.stringify(options.body) : undefined,
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeout);
-
-    let json: any = null;
-    try {
-      json = await res.json();
-    } catch {
-      // Non-JSON response body — leave json as null, handled below.
-    }
-
-    if (!res.ok) {
-      const message = json?.message || json?.error || `Request failed (${res.status})`;
-      throw new Error(message);
-    }
-
-    return json as T;
-  } catch (err: any) {
-    clearTimeout(timeout);
-    if (err?.name === 'AbortError') {
-      throw new Error('timeout');
-    }
-    throw err;
-  }
-}
-
 // ── Auth ─────────────────────────────────────────────────
-// LIVE: POST /v1/auth/customer/request-otp
+// REPLACE: POST /auth/send-otp
 export async function sendOTP(payload: AuthPayload): Promise<ApiResponse<{ message: string }>> {
-  const json = await apiFetch<any>('/v1/auth/customer/request-otp', {
-    method: 'POST',
-    body: { phoneNumber: payload.phone },
-  });
-  return {
-    success: true,
-    data: { message: json?.message ?? 'OTP sent successfully' },
-  };
+  await delay(1200);
+  return mockOk({ message: 'OTP sent successfully' });
 }
 
-// LIVE: POST /v1/auth/customer/verify-otp
+// REPLACE: POST /auth/verify-otp
 export async function verifyOTP(payload: OTPPayload): Promise<ApiResponse<{ token: string; user: UserProfile }>> {
-  const json = await apiFetch<any>('/v1/auth/customer/verify-otp', {
-    method: 'POST',
-    body: { phoneNumber: payload.phone, otp: payload.otp },
-  });
-
-  // Backend response shape isn't fully pinned down yet, so accept the
-  // common variants: { accessToken, userId }, { token, user }, or
-  // { success, data: { token, user } }. Adjust this mapping once you
-  // confirm your exact response body from Postman.
-  const data = json?.data ?? json;
-  const token = data?.accessToken ?? data?.token ?? '';
-  const rawUser = data?.user ?? {};
-
-  return {
-    success: true,
-    data: {
-      token,
-      user: {
-        id: rawUser?.id ?? data?.userId ?? '',
-        name: rawUser?.name ?? '',
-        phone: rawUser?.phone ?? payload.phone,
-        email: rawUser?.email ?? '',
-        walletBalance: rawUser?.walletBalance ?? 0,
-        vahanCoins: rawUser?.vahanCoins ?? 0,
-      },
+  await delay(1500);
+  return mockOk({
+    token: 'mock_jwt_token_' + Date.now(),
+    user: {
+      id: 'usr_001',
+      name: 'Ravi Kumar',
+      phone: payload.phone,
+      email: '',
+      walletBalance: 0,
+      vahanCoins: 0,
     },
-  };
+  });
 }
 
 // ── Profile ──────────────────────────────────────────────

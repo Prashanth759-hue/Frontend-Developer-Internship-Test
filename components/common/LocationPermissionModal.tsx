@@ -35,7 +35,7 @@ export function LocationPermissionModal({
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onDeny}>
       <View style={styles.overlay}>
         <View style={[styles.card, { backgroundColor: colors.surface }, Shadow.lg]}>
-          <View style={[styles.iconWrapper, { backgroundColor: colors.iconBg }]}>
+          <View style={styles.iconWrapper}>
             <MapPin size={30} color={Colors.primary} fill={Colors.primary} />
           </View>
 
@@ -88,6 +88,7 @@ const styles = StyleSheet.create({
     width: 68,
     height: 68,
     borderRadius: 34,
+    backgroundColor: Colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 4,

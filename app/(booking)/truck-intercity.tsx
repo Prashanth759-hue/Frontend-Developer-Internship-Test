@@ -14,16 +14,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { router } from 'expo-router';
-import { ArrowLeft, Clock, Check, MapPin, Circle, ChevronRight, ArrowUpDown } from 'lucide-react-native';
+import { ArrowLeft, Clock, Check, MapPin, Circle, ChevronRight } from 'lucide-react-native';
 import { Colors } from '../../theme/colors';
 import { useTheme } from '../../theme/ThemeContext';
-import { useLanguage } from '../../theme/LanguageContext';
 import { Button } from '../../components/common/Button';
 import { useBookingStore } from '../../store/bookingStore';
 import { useMapPickerStore } from '../../store/mapPickerStore';
 import LocationSearchInput from '../../components/booking/LocationSearchInput';
 import { INTERCITY_TRUCK_VEHICLES } from '../../constants/mockData';
-import HOME_BG from '../../assets/bg/homeBg';
 
 const TRUCK_IMAGES: Record<string, ImageSourcePropType> = {
   mini_truck: require('../../assets/images/icon-mini-truck.png'),
@@ -38,9 +36,7 @@ const POPULAR_ROUTES = [
 ];
 
 export default function TruckIntercityScreen() {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
-  const { t } = useLanguage();
+  const { colors } = useTheme();
   const { setSelectedVehicle, setEstimatedFare, setPickup, setDrop } = useBookingStore();
   const { result: mapResult, clearResult } = useMapPickerStore();
 
@@ -63,12 +59,6 @@ export default function TruckIntercityScreen() {
 
   const canProceedRoute = fromCity.trim().length > 1 && toCity.trim().length > 1;
 
-  const handleSwapLocations = () => {
-    const temp = fromCity;
-    setFromCity(toCity);
-    setToCity(temp);
-  };
-
   const handleRouteConfirm = () => {
     setPickup({ label: fromCity.trim(), address: fromCity.trim() });
     setDrop({ label: toCity.trim(), address: toCity.trim() });
@@ -90,11 +80,11 @@ export default function TruckIntercityScreen() {
   if (step === 'vehicle') {
     return (
       <ImageBackground
-        source={HOME_BG}
+        source={require('../../assets/images/home-bg.png')}
         style={styles.backgroundImage}
         resizeMode="cover"
       >
-        <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+        <SafeAreaView style={styles.safe}>
           {/* Header */}
           <View style={styles.heroHeader}>
             <View style={styles.heroTopRow}>
@@ -110,10 +100,10 @@ export default function TruckIntercityScreen() {
             </View>
             <View style={styles.chipsRow}>
               <View style={styles.chip}>
-                <Text style={styles.chipText}>{t('chipFuelTolls')}</Text>
+                <Text style={styles.chipText}>🚚 Fare includes fuel & tolls</Text>
               </View>
               <View style={styles.chip}>
-                <Text style={styles.chipText}>{t('chipInsuredMove')}</Text>
+                <Text style={styles.chipText}>🔒 Insured cargo</Text>
               </View>
             </View>
           </View>
@@ -190,19 +180,19 @@ export default function TruckIntercityScreen() {
   // Step: route selection
   return (
     <ImageBackground
-      source={HOME_BG}
+      source={require('../../assets/images/home-bg.png')}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <SafeAreaView style={styles.safe}>
         <View style={styles.heroHeader}>
           <View style={styles.heroTopRow}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
               <ArrowLeft size={20} color="#FF6B00" />
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
-              <Text style={styles.heroTitle}>{t('truckInterCities')}</Text>
-              <Text style={styles.heroSubtitle}>{t('truckInterCitiesDesc')}</Text>
+              <Text style={styles.heroTitle}>Inter City Truck</Text>
+              <Text style={styles.heroSubtitle}>City to city goods transport</Text>
             </View>
           </View>
         </View>
@@ -215,36 +205,25 @@ export default function TruckIntercityScreen() {
           {/* Route Input Card */}
           <View style={[styles.routeCard, { zIndex: 20 }]}>
             <Text style={styles.cardLabel}>📍 YOUR ROUTE</Text>
-            <View style={styles.locationFieldsWrap}>
-              <LocationSearchInput
-                value={fromCity}
-                onChangeText={setFromCity}
-                onSelect={setFromCity}
-                placeholder="From city  (e.g. Bengaluru)"
-                dotType="circle"
-                dotColor={Colors.primary}
-                fieldKey="from"
-              />
-              <View style={styles.routeDivider} />
-              <LocationSearchInput
-                value={toCity}
-                onChangeText={setToCity}
-                onSelect={setToCity}
-                placeholder="To city  (e.g. Chennai)"
-                dotType="pin"
-                dotColor={Colors.primary}
-                fieldKey="to"
-              />
-              <TouchableOpacity
-                style={styles.swapBtn}
-                onPress={handleSwapLocations}
-                accessibilityLabel="Swap from and to cities"
-                accessibilityRole="button"
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <ArrowUpDown size={16} color={Colors.primary} />
-              </TouchableOpacity>
-            </View>
+            <LocationSearchInput
+              value={fromCity}
+              onChangeText={setFromCity}
+              onSelect={setFromCity}
+              placeholder="From city  (e.g. Bengaluru)"
+              dotType="circle"
+              dotColor={Colors.primary}
+              fieldKey="from"
+            />
+            <View style={styles.routeDivider} />
+            <LocationSearchInput
+              value={toCity}
+              onChangeText={setToCity}
+              onSelect={setToCity}
+              placeholder="To city  (e.g. Chennai)"
+              dotType="pin"
+              dotColor={Colors.primary}
+              fieldKey="to"
+            />
           </View>
 
           {/* Popular Routes */}
@@ -270,7 +249,7 @@ export default function TruckIntercityScreen() {
 
           <View style={{ height: 16 }} />
           <Button
-            label={t('confirm')}
+            label="View Available Trucks"
             onPress={handleRouteConfirm}
             disabled={!canProceedRoute}
             style={{ width: '100%' }}
@@ -282,9 +261,9 @@ export default function TruckIntercityScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  backgroundImage: { flex: 1, width: '100%', height: '100%' },
+  backgroundImage: { flex: 1 },
 
   heroHeader: {
     paddingHorizontal: 20,
@@ -293,7 +272,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
     overflow: 'hidden',
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     marginBottom: 16,
   },
 
@@ -308,9 +287,9 @@ const makeStyles = (colors: any) => StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: colors.iconBorder,
+    borderColor: '#FFD6B3',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -324,7 +303,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
   heroSubtitle: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: '#666',
     fontWeight: '500',
     marginTop: 2,
   },
@@ -336,7 +315,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   },
 
   chip: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
@@ -356,11 +335,11 @@ const makeStyles = (colors: any) => StyleSheet.create({
   },
 
   routeCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 18,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: '#FFE8D6',
     shadowColor: '#FF6B00',
     shadowOpacity: 0.08,
     shadowRadius: 16,
@@ -372,7 +351,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   cardLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: colors.placeholder,
+    color: '#9CA3AF',
     letterSpacing: 1.2,
     marginBottom: 12,
   },
@@ -393,52 +372,27 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
   routeDivider: {
     height: 1,
-    backgroundColor: colors.cardBorder,
+    backgroundColor: '#FFE8D6',
     marginVertical: 4,
     marginLeft: 20,
   },
 
-  locationFieldsWrap: {
-    position: 'relative',
-    paddingRight: 44,
-  },
-  swapBtn: {
-  position: 'absolute',
-
-  right: 0,
-  top: 30,
-
-  width: 36,
-  height: 36,
-  borderRadius: 18,
-
-  justifyContent: 'center',
-  alignItems: 'center',
-
-  backgroundColor: colors.iconBg,
-  borderWidth: 1.5,
-  borderColor: colors.iconBorder,
-
-  zIndex: 1000,
-  elevation: 20,
-},
-
   sectionTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: '#1A1A1A',
     marginBottom: 10,
   },
 
   popularRouteCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: '#FFE8D6',
     shadowColor: '#FF6B00',
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -470,9 +424,9 @@ const makeStyles = (colors: any) => StyleSheet.create({
     gap: 14,
     borderRadius: 24,
     padding: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
-    borderColor: colors.cardBorder,
+    borderColor: '#FFE8D6',
     shadowColor: '#FF6B00',
     shadowOpacity: 0.07,
     shadowRadius: 12,
@@ -483,7 +437,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   vehicleCardActive: {
     borderColor: Colors.primary,
     borderWidth: 2,
-    backgroundColor: colors.subtleBg,
+    backgroundColor: '#FFF7F2',
   },
 
   vehicleImage: {
@@ -507,7 +461,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   },
 
   capacityBadge: {
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
@@ -526,11 +480,11 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
   fareArea: { alignItems: 'flex-end', gap: 4 },
 
-  fareText: { fontSize: 20, fontWeight: '800', color: colors.textPrimary },
+  fareText: { fontSize: 20, fontWeight: '800', color: '#1A1A1A' },
 
   fareTextActive: { color: Colors.primary },
 
-  fareNote: { fontSize: 10, color: colors.placeholder, fontWeight: '600' },
+  fareNote: { fontSize: 10, color: '#9CA3AF', fontWeight: '600' },
 
   checkCircle: {
     width: 24,
@@ -544,21 +498,20 @@ const makeStyles = (colors: any) => StyleSheet.create({
   footer: { paddingTop: 4, paddingBottom: 32, gap: 14 },
 
   infoCard: {
-    backgroundColor: colors.subtleBg,
+    backgroundColor: '#FFF7F2',
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: '#FFE8D6',
     gap: 6,
   },
 
   infoCardLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: colors.placeholder,
+    color: '#9CA3AF',
     letterSpacing: 1,
   },
 
   infoCardText: { fontSize: 12, lineHeight: 18 },
-})
-;
+});

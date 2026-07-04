@@ -19,18 +19,11 @@ import { useAuthStore } from '../store/authStore';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
 import { Colors } from '../theme/colors';
-import { useTheme } from '../theme/ThemeContext';
 import { Typography } from '../theme/typography';
 import { validateName, validateEmail, sanitizeName } from '../utils/validators';
-import HOME_BG from '../assets/bg/homeBg';
-import { useLanguage } from '../theme/LanguageContext';
 
 export default function EditProfileScreen() {
-  const { colors, isDark } = useTheme();
-  const styles = makeStyles(colors);
-
   const { user, updateUser } = useAuthStore();
-  const { t } = useLanguage();
 
   const [name, setName] = useState(user?.name ?? '');
   const [dob, setDob] = useState(user?.dob ?? '');
@@ -188,11 +181,11 @@ export default function EditProfileScreen() {
 
   return (
     <ImageBackground
-      source={HOME_BG}
+      source={require('../assets/images/home-bg.png')}
       style={{ flex: 1 }}
       resizeMode="cover"
     >
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -202,7 +195,7 @@ export default function EditProfileScreen() {
             <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
               <ArrowLeft size={22} color="#1A1A1A" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>{t('myProfile')}</Text>
+            <Text style={styles.headerTitle}>Edit Profile</Text>
             <View style={{ width: 42 }} />
           </View>
 
@@ -272,7 +265,7 @@ export default function EditProfileScreen() {
               />
 
               <View style={{ marginTop: 24 }}>
-                <Button label={t('save')} onPress={handleSave} disabled={!canSave} />
+                <Button label="Save Changes" onPress={handleSave} disabled={!canSave} />
               </View>
             </View>
           </ScrollView>
@@ -282,7 +275,7 @@ export default function EditProfileScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
 
   header: {
@@ -291,22 +284,22 @@ const makeStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.9)',
     borderBottomWidth: 1,
-    borderBottomColor: colors.inputBackground,
+    borderBottomColor: '#F0F0F0',
   },
   backBtn: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: colors.inputBackground,
+    backgroundColor: '#F5F5F5',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: colors.textPrimary,
+    color: '#1A1A1A',
   },
 
   scroll: {
@@ -343,7 +336,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   avatarInitials: {
     fontSize: 34,
     fontWeight: '800',
-    color: colors.surface,
+    color: '#FFF',
   },
   cameraOverlay: {
     position: 'absolute',
@@ -356,7 +349,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: colors.surface,
+    borderColor: '#FFF',
   },
   photoButtons: {
     flexDirection: 'row',
@@ -371,7 +364,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: Colors.primary,
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
   },
   photoBtnText: {
     fontSize: 13,
@@ -381,7 +374,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
   formCard: {
     marginHorizontal: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFF',
     borderRadius: 24,
     padding: 20,
     borderWidth: 1,
@@ -395,9 +388,8 @@ const makeStyles = (colors: any) => StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: '#111827',
     marginBottom: 6,
     marginTop: 14,
   },
-})
-;
+});

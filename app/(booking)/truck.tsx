@@ -16,7 +16,6 @@ import { Colors } from '../../theme/colors';
 import { useTheme } from '../../theme/ThemeContext';
 import { useLanguage } from '../../theme/LanguageContext';
 import { useBookingStore } from '../../store/bookingStore';
-import HOME_BG from '../../assets/bg/homeBg';
 
 const OPTION_IMAGES: Record<string, ImageSourcePropType> = {
   within_city:  require('../../assets/images/icon-handtruck.png'),
@@ -28,19 +27,18 @@ const TRUCK_OPTIONS = [
     id: 'within_city',
     titleKey: 'truckWithinCity',
     descKey: 'truckWithinCityDesc',
-    tagKey: 'tagLocalSameDay',
+    tag: 'Local · Same Day',
   },
   {
     id: 'inter_cities',
     titleKey: 'truckInterCities',
     descKey: 'truckInterCitiesDesc',
-    tagKey: 'tagCityToCity',
+    tag: 'City to City · Per KM',
   },
 ] as const;
 
 export default function TruckScreen() {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
+  const { colors } = useTheme();
   const { t } = useLanguage();
   const { setServiceType, setTripMode } = useBookingStore();
 
@@ -48,20 +46,20 @@ export default function TruckScreen() {
     setServiceType('heavy_cargo');
     if (id === 'within_city') {
       setTripMode('within_city');
+      router.push('/(booking)/pickup');
     } else {
       setTripMode('inter_cities');
+      router.push('/(booking)/truck-intercity');
     }
-    // Both flows now go to pickup (location entry) first
-    router.push('/(booking)/pickup');
   };
 
   return (
     <ImageBackground
-      source={HOME_BG}
+      source={require('../../assets/images/home-bg.png')}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <SafeAreaView style={styles.safe}>
         {/* ── Hero Header ── */}
         <View style={styles.heroHeader}>
           <View style={styles.heroTopRow}>
@@ -78,9 +76,9 @@ export default function TruckScreen() {
             </View>
           </View>
           <View style={styles.chipsRow}>
-            <View style={styles.chip}><Text style={styles.chipText}>{t('chipFuelTolls')}</Text></View>
-            <View style={styles.chip}><Text style={styles.chipText}>{t('chipDoorstepLoading')}</Text></View>
-            <View style={styles.chip}><Text style={styles.chipText}>{t('chipLiveTracking')}</Text></View>
+            <View style={styles.chip}><Text style={styles.chipText}>💡 Fuel & tolls included</Text></View>
+            <View style={styles.chip}><Text style={styles.chipText}>🚚 Doorstep loading</Text></View>
+            <View style={styles.chip}><Text style={styles.chipText}>📍 Live tracking</Text></View>
           </View>
         </View>
 
@@ -106,7 +104,7 @@ export default function TruckScreen() {
                   {t(item.descKey as any)}
                 </Text>
                 <View style={styles.tagBadge}>
-                  <Text style={styles.tagText}>{t(item.tagKey as any)}</Text>
+                  <Text style={styles.tagText}>{item.tag}</Text>
                 </View>
               </View>
 
@@ -120,9 +118,9 @@ export default function TruckScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  backgroundImage: { flex: 1, width: '100%', height: '100%' },
+  backgroundImage: { flex: 1 },
 
   heroHeader: {
     paddingHorizontal: 20,
@@ -131,7 +129,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
     overflow: 'hidden',
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     marginBottom: 16,
   },
   heroTopRow: {
@@ -144,14 +142,14 @@ const makeStyles = (colors: any) => StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: colors.iconBorder,
+    borderColor: '#FFD6B3',
     justifyContent: 'center',
     alignItems: 'center',
   },
   heroTitle: { fontSize: 24, fontWeight: '800', color: '#FF6B00', letterSpacing: -0.5 },
-  heroSubtitle: { fontSize: 12, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
+  heroSubtitle: { fontSize: 12, color: '#666', fontWeight: '500', marginTop: 2 },
 
   list: { paddingHorizontal: 16, paddingBottom: 32, paddingTop: 4 },
 
@@ -161,9 +159,9 @@ const makeStyles = (colors: any) => StyleSheet.create({
     gap: 14,
     borderRadius: 24,
     padding: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
-    borderColor: colors.cardBorder,
+    borderColor: '#FFE8D6',
     shadowColor: '#FF6B00',
     shadowOpacity: 0.07,
     shadowRadius: 12,
@@ -176,18 +174,18 @@ const makeStyles = (colors: any) => StyleSheet.create({
   optionDesc: { fontSize: 12 },
   tagBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: colors.iconBorder,
+    borderColor: '#FFD6B3',
     marginTop: 4,
   },
   tagText: { fontSize: 10, fontWeight: '700', color: '#FF6B00' },
   chipsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   chip: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,

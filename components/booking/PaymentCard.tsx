@@ -53,7 +53,7 @@ export default function PaymentCard({ selected, onSelect }: PaymentCardProps) {
               <View
                 style={[
                   styles.iconWrap,
-                  { backgroundColor: isActive ? colors.iconBg : colors.surface },
+                  { backgroundColor: isActive ? Colors.primaryLight : colors.surface },
                 ]}
               >
                 <opt.Icon size={20} color={isActive ? Colors.primary : colors.icon} />

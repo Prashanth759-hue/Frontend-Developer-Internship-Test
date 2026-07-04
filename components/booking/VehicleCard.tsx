@@ -47,7 +47,7 @@ export default function VehicleCard({ vehicle, selected, onSelect }: VehicleCard
       accessibilityState={{ selected }}
     >
       {/* Icon */}
-      <View style={[styles.iconWrap, { backgroundColor: selected ? colors.iconBg : colors.surface }]}>
+      <View style={[styles.iconWrap, { backgroundColor: selected ? Colors.primaryLight : colors.surface }]}>
         <Icon size={28} color={selected ? Colors.primary : colors.icon} />
       </View>
 

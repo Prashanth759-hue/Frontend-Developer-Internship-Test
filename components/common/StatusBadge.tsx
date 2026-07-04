@@ -1,25 +1,46 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors } from '../../theme/colors';
-import { useTheme } from '../../theme/ThemeContext';
 import { Typography } from '../../theme/typography';
 import { BorderRadius } from '../../theme/spacing';
 
-type Status = 'completed' | 'cancelled' | 'ongoing' | 'booked' | 'pending';
+type Status = 'completed' | 'cancelled' | 'ongoing' | 'pending';
 
 interface StatusBadgeProps {
   status: Status;
 }
 
+const STATUS_CONFIG: Record<
+  Status,
+  { label: string; bg: string; color: string; dot: string }
+> = {
+  completed: {
+    label: 'Completed',
+    bg: Colors.successLight,
+    color: Colors.success,
+    dot: Colors.success,
+  },
+  cancelled: {
+    label: 'Cancelled',
+    bg: Colors.dangerLight,
+    color: Colors.danger,
+    dot: Colors.danger,
+  },
+  ongoing: {
+    label: 'Ongoing',
+    bg: Colors.primaryLight,
+    color: Colors.primary,
+    dot: Colors.primary,
+  },
+  pending: {
+    label: 'Pending',
+    bg: Colors.warningLight,
+    color: Colors.warning,
+    dot: Colors.warning,
+  },
+};
+
 export function StatusBadge({ status }: StatusBadgeProps) {
-  const { colors } = useTheme();
-  const STATUS_CONFIG: Record<Status, { label: string; bg: string; color: string; dot: string }> = {
-    completed: { label: 'Completed', bg: colors.surfaceElevated, color: Colors.success, dot: Colors.success },
-    cancelled:  { label: 'Cancelled',  bg: colors.surfaceElevated, color: Colors.danger,  dot: Colors.danger  },
-    ongoing:    { label: 'Ongoing',    bg: colors.iconBg,          color: Colors.primary, dot: Colors.primary },
-    booked:     { label: 'Booked',     bg: colors.iconBg,          color: Colors.warning, dot: Colors.warning },
-    pending:    { label: 'Pending',    bg: colors.surfaceElevated, color: Colors.warning, dot: Colors.warning },
-  };
   const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
 
   return (

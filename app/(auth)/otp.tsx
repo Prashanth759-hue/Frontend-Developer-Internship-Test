@@ -19,21 +19,33 @@ import { Colors } from '../../theme/colors';
 import { Typography, FontFamily, FontSize } from '../../theme/typography';
 import { BorderRadius } from '../../theme/spacing';
 import { useTheme } from '../../theme/ThemeContext';
-import { useLanguage } from '../../theme/LanguageContext';
 import { Button } from '../../components/common/Button';
 import { useAuthStore } from '../../store/authStore';
 import { validateOTP, isValidOTP } from '../../utils/validators';
 import { checkRateLimit } from '../../constants/security';
 import { secureSet, KEYS } from '../../constants/storage';
-import { sendOTP, verifyOTP } from '../../services/api';
 import { ArrowLeft } from 'lucide-react-native';
-import LOGIN_BG from '../../assets/bg/loginBg';
-import { bgTopAnchor } from '../../assets/bg/bgPosition';
 
 const OTP_LENGTH = 6;
 const RESEND_TIMEOUT = 15;
 
+// Network error types for friendly messaging
 type NetworkErrorKind = 'no_internet' | 'timeout' | 'server' | 'invalid_otp' | null;
+
+function getErrorMessage(kind: NetworkErrorKind): string {
+  switch (kind) {
+    case 'no_internet':
+      return 'No internet connection. Please check your network and try again.';
+    case 'timeout':
+      return 'Request timed out. Please try again.';
+    case 'server':
+      return 'Something went wrong on our end. Please try again in a moment.';
+    case 'invalid_otp':
+      return 'The OTP you entered is incorrect. Please check and try again.';
+    default:
+      return '';
+  }
+}
 
 /** Lightweight check — resolves true if online, false if offline.
  *  On web, the cross-origin HEAD request is blocked by CORS and would
@@ -59,9 +71,7 @@ async function checkConnectivity(): Promise<boolean> {
 }
 
 export default function OTPScreen() {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
-  const { t } = useLanguage();
+  const { colors } = useTheme();
   const {
     phone,
     setAuthenticated,
@@ -192,6 +202,12 @@ export default function OTPScreen() {
       return;
     }
 
+    // Validate against the accepted OTP
+    if (otpStr !== '123456') {
+      setOtpError('Incorrect OTP. Please check and try again.');
+      return;
+    }
+
     setOtpError('');
     setNetworkError(null);
     setPendingAction('verify');
@@ -206,21 +222,19 @@ export default function OTPScreen() {
         return;
       }
 
-      // Real call to POST /v1/auth/customer/verify-otp
-      const res = await verifyOTP({ phone, otp: otpStr });
+      // --- Replace the block below with your real API call ---
+      await new Promise<void>((resolve) => setTimeout(resolve, 1500));
+      // -------------------------------------------------------
 
       setLoading(false);
-      setUser(res.data.user);
       setAuthenticated(true);
-      await secureSet(KEYS.AUTH_TOKEN, res.data.token);
+      await secureSet(KEYS.AUTH_TOKEN, 'mock_token_' + Date.now());
       router.replace('/(auth)/personal-details');
 
     } catch (err: any) {
       setLoading(false);
-      if (err?.message === 'timeout') {
+      if (err?.name === 'AbortError' || err?.message === 'timeout') {
         setNetworkError('timeout');
-      } else if (/incorrect|invalid.*otp/i.test(err?.message || '')) {
-        setOtpError(err.message);
       } else {
         setNetworkError('server');
       }
@@ -244,8 +258,9 @@ export default function OTPScreen() {
         return;
       }
 
-      // Real call to POST /v1/auth/customer/request-otp
-      await sendOTP({ phone });
+      // --- Replace the block below with your real resend API call ---
+      await new Promise<void>((resolve) => setTimeout(resolve, 800));
+      // --------------------------------------------------------------
 
       setLoading(false);
       startResendTimer();
@@ -268,7 +283,7 @@ export default function OTPScreen() {
 
   return (
     <View style={styles.container}>
-      <ImageBackground source={LOGIN_BG} style={[styles.heroImage, bgTopAnchor]} resizeMode="cover">
+      <ImageBackground source={require('../../assets/images/login-bg.png')} style={styles.heroImage} resizeMode="cover">
         <View style={styles.imageOverlay} />
       </ImageBackground>
 
@@ -285,8 +300,8 @@ export default function OTPScreen() {
             </TouchableOpacity>
 
             <View style={styles.headerArea}>
-              <Text style={[styles.heading, { color: colors.textPrimary }]}>{t('otpHeading')}</Text>
-              <Text style={[styles.sub, { color: colors.textSecondary }]}>{t('otpSub')}</Text>
+              <Text style={[styles.heading, { color: colors.textPrimary }]}>Verify OTP</Text>
+              <Text style={[styles.sub, { color: colors.textSecondary }]}>Enter the 6-digit code sent to</Text>
               <Text style={{ color: Colors.primary, fontFamily: 'Inter_600SemiBold' }}>+91 {phone}</Text>
             </View>
 
@@ -298,7 +313,7 @@ export default function OTPScreen() {
                   style={[
                     styles.otpBox,
                     {
-                      backgroundColor: otp[i] ? colors.iconBg : colors.inputBackground,
+                      backgroundColor: otp[i] ? Colors.primaryLight : colors.inputBackground,
                       borderColor: (otpError || networkError === 'invalid_otp')
                         ? Colors.danger
                         : otp[i] ? Colors.primary : '#FFD9C0',
@@ -307,12 +322,15 @@ export default function OTPScreen() {
                     },
                   ]}
                   keyboardType="numeric"
-                  maxLength={Platform.OS === 'web' ? 2 : 1}
+                  maxLength={2}
                   value={otp[i]}
                   onChangeText={(t) => handleOtpChange(t, i)}
                   onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, i)}
+                  autoFocus={i === 0}
                   selectTextOnFocus
                   textAlign="center"
+                  placeholder="-"
+                  placeholderTextColor={colors.border}
                   accessibilityLabel={`OTP digit ${i + 1}`}
                 />
               ))}
@@ -337,11 +355,7 @@ export default function OTPScreen() {
               <View style={styles.networkErrorLeft}>
                 <WifiOff size={18} color={Colors.danger} style={{ flexShrink: 0 }} />
                 <Text style={styles.networkErrorText}>
-                  {networkError === 'no_internet' ? t('otpErrorNoInternet')
-                    : networkError === 'timeout' ? t('otpErrorTimeout')
-                    : networkError === 'server' ? t('otpErrorServer')
-                    : networkError === 'invalid_otp' ? t('otpErrorInvalidOtp')
-                    : ''}
+                  {getErrorMessage(networkError)}
                 </Text>
               </View>
               <TouchableOpacity
@@ -351,13 +365,13 @@ export default function OTPScreen() {
                 accessibilityRole="button"
               >
                 <RefreshCw size={14} color={Colors.white} />
-                <Text style={styles.retryButtonText}>{t('otpRetry')}</Text>
+                <Text style={styles.retryButtonText}>Retry</Text>
               </TouchableOpacity>
             </Animated.View>
 
             <View style={{ marginTop: 16 }}>
               <Button
-                label={t('otpVerify')}
+                label="Verify & Continue"
                 onPress={handleVerify}
                 disabled={!isValidOTP(otp.join(''))}
                 loading={isLoading}
@@ -367,12 +381,12 @@ export default function OTPScreen() {
             <View style={styles.resendContainer}>
               {!canResend ? (
                 <Text style={styles.resendTitle}>
-                  {t('otpResendIn').replace('{seconds}', String(resendTimer).padStart(2, '0'))}
+                  RESEND OTP IN {String(resendTimer).padStart(2, '0')} SECONDS
                 </Text>
               ) : (
                 <>
                   <Text style={styles.resendTitle}>
-                    {t('otpDidntReceive')}
+                    Didn't receive the OTP?
                   </Text>
 
                   <View style={styles.resendButtons}>
@@ -404,44 +418,44 @@ export default function OTPScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surface },
-  heroImage: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
-  imageOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.15)' },
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#fff' },
+  heroImage: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  imageOverlay: { flex: 1, backgroundColor: 'rgba(255,255,255,0.4)' },
   keyboardAvoider: { flex: 1, justifyContent: 'flex-end' },
   card: {
-    backgroundColor: colors.surface, borderTopLeftRadius: 32, borderTopRightRadius: 32,
+    backgroundColor: '#FFF', borderTopLeftRadius: 32, borderTopRightRadius: 32,
     paddingTop: 24, paddingHorizontal: 24, maxHeight: '85%',
-    shadowColor: colors.textPrimary, shadowOpacity: 0.1, shadowRadius: 12,
+    shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 12,
     shadowOffset: { width: 0, height: -2 }, elevation: 10,
   },
   scrollContent: { paddingBottom: 36 },
   backBtn: {
     width: 44, height: 44, borderRadius: 22, justifyContent: 'center',
     alignItems: 'center', alignSelf: 'flex-start',
-    backgroundColor: colors.iconBg, borderWidth: 1.5, borderColor: '#FFD9C0',
+    backgroundColor: Colors.primaryLight, borderWidth: 1.5, borderColor: '#FFD9C0',
   },
   headerArea: { gap: 8, marginTop: 8 },
   heading: { ...Typography.h1 },
   sub: { ...Typography.bodyLarge, lineHeight: 26 },
   otpRow: { flexDirection: 'row', gap: 8, justifyContent: 'center', marginTop: 16 },
   otpBox: {
-    width: 48,
-    height: 56,
+    width: 46,
+    height: 64,
+    maxWidth: 52,
     borderRadius: BorderRadius.lg,
     borderWidth: 2,
     fontFamily: FontFamily.bold,
     fontSize: FontSize.xl,
-    lineHeight: Platform.OS === 'android' ? undefined : FontSize.xl * 1.2,
     textAlign: 'center',
     textAlignVertical: 'center',
     includeFontPadding: false,
-    paddingHorizontal: 0,
+    paddingHorizontal: 16,
     paddingVertical: 0,
   },
   errorText: {
     ...Typography.caption, color: Colors.danger, textAlign: 'center',
-    backgroundColor: colors.surfaceElevated, paddingHorizontal: 12, paddingVertical: 8,
+    backgroundColor: Colors.dangerLight, paddingHorizontal: 12, paddingVertical: 8,
     borderRadius: BorderRadius.md, borderLeftWidth: 3, borderLeftColor: Colors.danger,
     marginTop: 8,
   },
@@ -451,7 +465,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: Colors.dangerLight,
     borderRadius: BorderRadius.md,
     borderLeftWidth: 3,
     borderLeftColor: Colors.danger,
@@ -490,13 +504,12 @@ const makeStyles = (colors: any) => StyleSheet.create({
   // ────────────────────────────────────────────────────────────────────────
 
   resendContainer: { marginTop: 24 },
-  resendTitle: { fontSize: 18, fontWeight: '700', color: colors.textSecondary, marginBottom: 14 },
+  resendTitle: { fontSize: 18, fontWeight: '700', color: '#6B778C', marginBottom: 14 },
   resendButtons: { flexDirection: 'row', gap: 12 },
   resendButton: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: colors.border, borderRadius: 14,
+    borderWidth: 1, borderColor: '#D5DDE8', borderRadius: 14,
     paddingVertical: 14, paddingHorizontal: 18, gap: 8,
   },
-  resendButtonText: { fontSize: 18, fontWeight: '600', color: colors.textSecondary },
-})
-;
+  resendButtonText: { fontSize: 18, fontWeight: '600', color: '#7A869A' },
+});

@@ -72,7 +72,7 @@ export default function FareCard({ rows, total, distanceKm, durationMin }: FareC
       </View>
 
       {/* Safety note */}
-      <View style={[styles.safetyNote, { backgroundColor: colors.iconBg }]}>
+      <View style={[styles.safetyNote, { backgroundColor: Colors.primaryLight }]}>
         <Text style={[styles.safetyText, { color: Colors.primaryDark }]}>
           🛡️ Covered under Vahan360 passenger safety policy
         </Text>

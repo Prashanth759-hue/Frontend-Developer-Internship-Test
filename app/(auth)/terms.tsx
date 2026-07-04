@@ -9,19 +9,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
-import { useTheme } from '../../theme/ThemeContext';
-import HOME_BG from '../../assets/bg/homeBg';
 
 export default function TermsScreen() {
-  const { colors, isDark } = useTheme();
-  const styles = makeStyles(colors);
   return (
   <ImageBackground
-    source={HOME_BG}
+    source={require('../../assets/images/home-bg.png')}
     style={styles.backgroundImage}
     resizeMode="cover"
   >
-    <SafeAreaView style={[styles.container, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+    <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -120,11 +116,9 @@ export default function TermsScreen() {
 );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
-    width: '100%',
-    height: '100%',
   },
 
   container: {
@@ -145,7 +139,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
 
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
 
     borderWidth: 1,
     borderColor: '#FF6B00',
@@ -170,7 +164,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
     borderRadius: 30,
 
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255,255,255,0.15)',
 
     marginBottom: 16,
   },
@@ -185,12 +179,12 @@ const makeStyles = (colors: any) => StyleSheet.create({
   heroSubtitle: {
     marginTop: 4,
     fontSize: 13,
-    color: colors.textSecondary,
+    color: '#666',
     fontWeight: '500',
   },
 
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
 
     borderRadius: 24,
 
@@ -220,7 +214,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: colors.textPrimary,
+    color: '#1A1A1A',
     marginTop: 20,
     marginBottom: 8,
   },
@@ -228,7 +222,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   paragraph: {
     fontSize: 15,
     lineHeight: 26,
-    color: colors.textSecondary,
+    color: '#555',
   },
 
   noteBox: {
@@ -238,7 +232,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
     borderRadius: 18,
 
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
 
     borderWidth: 1,
     borderColor: '#FF6B00',
@@ -250,5 +244,4 @@ const makeStyles = (colors: any) => StyleSheet.create({
     color: '#FF6B00',
     fontWeight: '600',
   },
-})
-;
+});

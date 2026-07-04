@@ -16,7 +16,6 @@ import { Colors } from '../../theme/colors';
 import { useTheme } from '../../theme/ThemeContext';
 import { useLanguage } from '../../theme/LanguageContext';
 import { useBookingStore } from '../../store/bookingStore';
-import HOME_BG from '../../assets/bg/homeBg';
 
 const OPTION_IMAGES: Record<string, ImageSourcePropType> = {
   within_city:    require('../../assets/images/icon-handtruck.png'),
@@ -29,7 +28,7 @@ const SHIFTING_OPTIONS = [
     id: 'within_city',
     titleKey: 'shiftingWithinCity',
     descKey: 'shiftingWithinCityDesc',
-    tagKey: 'tagLocalFullPacking',
+    tag: 'Local · Full Packing Team',
     live: true,
     route: '/(booking)/pickup' as const,
   },
@@ -37,7 +36,7 @@ const SHIFTING_OPTIONS = [
     id: 'mini_truck',
     titleKey: 'shiftingMiniTruck',
     descKey: 'shiftingMiniTruckDesc',
-    tagKey: 'tagLightShifting',
+    tag: 'Light Shifting · Budget Friendly',
     live: true,
     route: '/(booking)/movers-mini-truck' as const,
   },
@@ -45,25 +44,24 @@ const SHIFTING_OPTIONS = [
     id: 'between_cities',
     titleKey: 'shiftingBetweenCities',
     descKey: 'shiftingBetweenCitiesDesc',
-    tagKey: 'tagCityToCityIntercity',
+    tag: 'City to City · Intercity Move',
     live: true,
-    route: '/(booking)/pickup' as const,
+    route: '/(booking)/movers-intercity' as const,
   },
 ] as const;
 
 export default function PackersMoversScreen() {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
+  const { colors } = useTheme();
   const { t } = useLanguage();
   const { setServiceType, setMoversFlow } = useBookingStore();
 
   return (
     <ImageBackground
-      source={HOME_BG}
+      source={require('../../assets/images/home-bg.png')}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <SafeAreaView style={styles.safe}>
         <View style={styles.heroHeader}>
           <View style={styles.heroTopRow}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityLabel="Go back">
@@ -75,9 +73,9 @@ export default function PackersMoversScreen() {
             </View>
           </View>
           <View style={styles.chipsRow}>
-            <View style={styles.chip}><Text style={styles.chipText}>{t('chipHassleFree')}</Text></View>
-            <View style={styles.chip}><Text style={styles.chipText}>{t('chipFullPacking')}</Text></View>
-            <View style={styles.chip}><Text style={styles.chipText}>{t('chipInsuredMove')}</Text></View>
+            <View style={styles.chip}><Text style={styles.chipText}>🏠 Hassle-free shifting</Text></View>
+            <View style={styles.chip}><Text style={styles.chipText}>📦 Full packing</Text></View>
+            <View style={styles.chip}><Text style={styles.chipText}>🛡️ Insured move</Text></View>
           </View>
         </View>
 
@@ -106,7 +104,7 @@ export default function PackersMoversScreen() {
                   {t(item.descKey as any)}
                 </Text>
                 <View style={styles.tagBadge}>
-                  <Text style={styles.tagText}>{t(item.tagKey as any)}</Text>
+                  <Text style={styles.tagText}>{item.tag}</Text>
                 </View>
               </View>
               <ChevronRight size={20} color={Colors.primary} />
@@ -119,25 +117,25 @@ export default function PackersMoversScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  backgroundImage: { flex: 1, width: '100%', height: '100%' },
+  backgroundImage: { flex: 1 },
   heroHeader: {
     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 28,
     borderBottomLeftRadius: 36, borderBottomRightRadius: 36,
-    overflow: 'hidden', backgroundColor: colors.surfaceElevated, marginBottom: 16,
+    overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.18)', marginBottom: 16,
   },
   heroTopRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 16 },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: colors.iconBorder, justifyContent: 'center', alignItems: 'center',
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF',
+    borderWidth: 1, borderColor: '#FFD6B3', justifyContent: 'center', alignItems: 'center',
   },
   heroTitle: { fontSize: 24, fontWeight: '800', color: '#FF6B00', letterSpacing: -0.5 },
-  heroSubtitle: { fontSize: 12, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
+  heroSubtitle: { fontSize: 12, color: '#666', fontWeight: '500', marginTop: 2 },
   list: { paddingHorizontal: 16, paddingBottom: 32, paddingTop: 4 },
   optionCard: {
     flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 24,
-    padding: 16, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.cardBorder,
+    padding: 16, backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.07, shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 }, elevation: 4,
   },
@@ -146,12 +144,11 @@ const makeStyles = (colors: any) => StyleSheet.create({
   optionName: { fontSize: 16, fontWeight: '700' },
   optionDesc: { fontSize: 12 },
   tagBadge: {
-    alignSelf: 'flex-start', backgroundColor: colors.iconBg, paddingHorizontal: 8,
-    paddingVertical: 3, borderRadius: 10, borderWidth: 1, borderColor: colors.iconBorder, marginTop: 4,
+    alignSelf: 'flex-start', backgroundColor: '#FFF0E6', paddingHorizontal: 8,
+    paddingVertical: 3, borderRadius: 10, borderWidth: 1, borderColor: '#FFD6B3', marginTop: 4,
   },
   tagText: { fontSize: 10, fontWeight: '700', color: '#FF6B00' },
   chipsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  chip: { backgroundColor: colors.surface, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
+  chip: { backgroundColor: '#FFFFFF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
   chipText: { fontSize: 11, fontWeight: '600', color: '#FF6B00' },
-})
-;
+});

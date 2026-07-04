@@ -5,7 +5,6 @@ import { Colors } from '../../theme/colors';
 import { Typography } from '../../theme/typography';
 import { Layout, Shadow } from '../../theme/spacing';
 import { useTheme } from '../../theme/ThemeContext';
-import { useLanguage } from '../../theme/LanguageContext';
 
 interface TabIconProps {
   icon: React.ReactNode;
@@ -34,7 +33,6 @@ function TabIcon({ icon, label, focused }: TabIconProps) {
 
 export default function TabsLayout() {
   const { colors } = useTheme();
-  const { t } = useLanguage();
 
   return (
     <Tabs
@@ -59,10 +57,24 @@ export default function TabsLayout() {
           tabBarIcon: ({ focused, color }) => (
             <TabIcon
               icon={<Home size={22} color={focused ? Colors.primary : color} />}
-              label={t('tabHome')}
+              label="Home"
               focused={focused}
             />
           ),
+          // Prevent keyboard Tab key from triggering navigation on web
+          tabBarButton: Platform.OS === 'web'
+            ? (props) => (
+                <View
+                  {...(props as any)}
+                  // @ts-ignore — tabIndex is valid on web
+                  tabIndex={0}
+                  onKeyDown={(e: any) => {
+                    if (e.key === 'Tab') e.stopPropagation();
+                    (props as any).onKeyDown?.(e);
+                  }}
+                />
+              )
+            : undefined,
         }}
       />
       <Tabs.Screen
@@ -71,10 +83,23 @@ export default function TabsLayout() {
           tabBarIcon: ({ focused, color }) => (
             <TabIcon
               icon={<ClipboardList size={22} color={focused ? Colors.primary : color} />}
-              label={t('tabOrders')}
+              label="Orders"
               focused={focused}
             />
           ),
+          tabBarButton: Platform.OS === 'web'
+            ? (props) => (
+                <View
+                  {...(props as any)}
+                  // @ts-ignore
+                  tabIndex={0}
+                  onKeyDown={(e: any) => {
+                    if (e.key === 'Tab') e.stopPropagation();
+                    (props as any).onKeyDown?.(e);
+                  }}
+                />
+              )
+            : undefined,
         }}
       />
       <Tabs.Screen
@@ -83,10 +108,23 @@ export default function TabsLayout() {
           tabBarIcon: ({ focused, color }) => (
             <TabIcon
               icon={<Wallet size={22} color={focused ? Colors.primary : color} />}
-              label={t('tabWallet')}
+              label="Wallet"
               focused={focused}
             />
           ),
+          tabBarButton: Platform.OS === 'web'
+            ? (props) => (
+                <View
+                  {...(props as any)}
+                  // @ts-ignore
+                  tabIndex={0}
+                  onKeyDown={(e: any) => {
+                    if (e.key === 'Tab') e.stopPropagation();
+                    (props as any).onKeyDown?.(e);
+                  }}
+                />
+              )
+            : undefined,
         }}
       />
       <Tabs.Screen
@@ -95,10 +133,23 @@ export default function TabsLayout() {
           tabBarIcon: ({ focused, color }) => (
             <TabIcon
               icon={<User size={22} color={focused ? Colors.primary : color} />}
-              label={t('tabProfile')}
+              label="Profile"
               focused={focused}
             />
           ),
+          tabBarButton: Platform.OS === 'web'
+            ? (props) => (
+                <View
+                  {...(props as any)}
+                  // @ts-ignore
+                  tabIndex={0}
+                  onKeyDown={(e: any) => {
+                    if (e.key === 'Tab') e.stopPropagation();
+                    (props as any).onKeyDown?.(e);
+                  }}
+                />
+              )
+            : undefined,
         }}
       />
       <Tabs.Screen

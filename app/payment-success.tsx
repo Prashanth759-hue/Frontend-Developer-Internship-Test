@@ -1,14 +1,12 @@
 import React from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ImageBackground, ScrollView, Share, Alert, Platform,
+  ImageBackground, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { CheckCircle, Wallet, Download, Home, ArrowRight } from 'lucide-react-native';
 import { Colors } from '../theme/colors';
-import { useTheme } from '../theme/ThemeContext';
-import HOME_BG from '../assets/bg/homeBg';
 
 function generateTxnId() {
   return 'TXN' + Date.now().toString().slice(-10).toUpperCase();
@@ -17,9 +15,6 @@ function generateTxnId() {
 const TXN_ID = generateTxnId();
 
 export default function PaymentSuccessScreen() {
-  const { colors, isDark } = useTheme();
-  const styles = makeStyles(colors);
-
   const { amount, type } = useLocalSearchParams<{ amount: string; type: string }>();
   const displayAmount = parseInt(amount ?? '0', 10);
   const isAddMoney = type === 'add_money';
@@ -27,33 +22,13 @@ export default function PaymentSuccessScreen() {
   const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
-  const handleDownloadReceipt = async () => {
-    const receiptText =
-      `Vahan Payment Receipt\n` +
-      `----------------------------\n` +
-      `Transaction ID: ${TXN_ID}\n` +
-      `Date: ${dateStr}, ${timeStr}\n` +
-      `Type: ${isAddMoney ? 'Wallet Top-up' : 'Ride Payment'}\n` +
-      `Amount: ₹${displayAmount.toLocaleString('en-IN')}\n` +
-      `Status: Completed\n`;
-
-    try {
-      await Share.share(
-        { title: 'Vahan Payment Receipt', message: receiptText },
-        { dialogTitle: 'Share or save your receipt' },
-      );
-    } catch {
-      Alert.alert('Could not share receipt', 'Please try again in a moment.');
-    }
-  };
-
   return (
     <ImageBackground
-      source={HOME_BG}
+      source={require('../assets/images/home-bg.png')}
       style={styles.bg}
       resizeMode="cover"
     >
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <SafeAreaView style={styles.safe}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
           {/* Success icon */}
@@ -118,7 +93,7 @@ export default function PaymentSuccessScreen() {
                 <View style={styles.divider} />
                 <View style={styles.detailRow}>
                   <Text style={styles.detailKey}>New Balance</Text>
-                  <Text style={[styles.detailValue, { color: Colors.success, fontWeight: '800' }]}>
+                  <Text style={[styles.detailValue, { color: '#16A34A', fontWeight: '800' }]}>
                     ₹{displayAmount.toLocaleString('en-IN')}
                   </Text>
                 </View>
@@ -127,11 +102,7 @@ export default function PaymentSuccessScreen() {
           </View>
 
           {/* Actions */}
-          <TouchableOpacity
-            style={styles.downloadBtn}
-            onPress={handleDownloadReceipt}
-            accessibilityLabel="Download or share payment receipt"
-          >
+          <TouchableOpacity style={styles.downloadBtn}>
             <Download size={18} color={Colors.primary} />
             <Text style={styles.downloadBtnText}>Download Receipt</Text>
           </TouchableOpacity>
@@ -160,8 +131,8 @@ export default function PaymentSuccessScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
-  bg: { flex: 1, width: '100%', height: '100%' },
+const styles = StyleSheet.create({
+  bg: { flex: 1 },
   safe: { flex: 1, backgroundColor: 'transparent' },
 
   content: {
@@ -172,7 +143,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   iconWrap: { position: 'relative', width: 110, height: 110, justifyContent: 'center', alignItems: 'center' },
   iconCircle: {
     width: 90, height: 90, borderRadius: 45,
-    backgroundColor: colors.surfaceElevated, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#DCFCE7', justifyContent: 'center', alignItems: 'center',
     borderWidth: 2, borderColor: '#BBF7D0',
   },
   iconRing: {
@@ -180,49 +151,49 @@ const makeStyles = (colors: any) => StyleSheet.create({
     borderWidth: 2, borderColor: '#BBF7D0', opacity: 0.5,
   },
 
-  title: { fontSize: 28, fontWeight: '800', color: colors.textPrimary, textAlign: 'center' },
-  subtitle: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', lineHeight: 20 },
+  title: { fontSize: 28, fontWeight: '800', color: '#1A1A1A', textAlign: 'center' },
+  subtitle: { fontSize: 14, color: '#666', textAlign: 'center', lineHeight: 20 },
 
   amountCard: {
     backgroundColor: '#16A34A', borderRadius: 24, padding: 24,
     alignItems: 'center', gap: 6, width: '100%',
   },
   amountLabel: { fontSize: 13, color: 'rgba(255,255,255,0.8)', fontWeight: '600' },
-  amountValue: { fontSize: 44, fontWeight: '800', color: colors.surface },
+  amountValue: { fontSize: 44, fontWeight: '800', color: '#FFF' },
 
   detailCard: {
-    backgroundColor: colors.surface, borderRadius: 24, padding: 20,
-    borderWidth: 1.5, borderColor: colors.border, width: '100%',
+    backgroundColor: '#FFF', borderRadius: 24, padding: 20,
+    borderWidth: 1.5, borderColor: '#E5E7EB', width: '100%',
     gap: 12,
-    shadowColor: colors.textPrimary, shadowOpacity: 0.06, shadowRadius: 10,
+    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10,
     shadowOffset: { width: 0, height: 3 }, elevation: 3,
   },
-  detailCardTitle: { fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginBottom: 4 },
+  detailCardTitle: { fontSize: 14, fontWeight: '700', color: '#1A1A1A', marginBottom: 4 },
   detailRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  detailKey: { fontSize: 13, color: colors.placeholder, fontWeight: '500' },
-  detailValue: { fontSize: 13, color: colors.textPrimary, fontWeight: '600' },
-  divider: { height: 1, backgroundColor: colors.divider },
+  detailKey: { fontSize: 13, color: '#9CA3AF', fontWeight: '500' },
+  detailValue: { fontSize: 13, color: '#1A1A1A', fontWeight: '600' },
+  divider: { height: 1, backgroundColor: '#F3F4F6' },
 
   methodBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: colors.iconBg, paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: 12, borderWidth: 1, borderColor: colors.iconBorder,
+    backgroundColor: '#FFF0E6', paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: 12, borderWidth: 1, borderColor: '#FFD6B3',
   },
   methodBadgeText: { fontSize: 12, fontWeight: '700', color: Colors.primary },
 
   statusBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: colors.surfaceElevated, paddingHorizontal: 10, paddingVertical: 4,
+    backgroundColor: '#DCFCE7', paddingHorizontal: 10, paddingVertical: 4,
     borderRadius: 12,
   },
   statusDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#22C55E' },
-  statusText: { fontSize: 12, fontWeight: '700', color: Colors.success },
+  statusText: { fontSize: 12, fontWeight: '700', color: '#16A34A' },
 
   downloadBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     width: '100%', borderRadius: 20, paddingVertical: 14,
     borderWidth: 1.5, borderColor: Colors.primary, justifyContent: 'center',
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
   },
   downloadBtnText: { fontSize: 15, fontWeight: '700', color: Colors.primary },
 
@@ -233,11 +204,10 @@ const makeStyles = (colors: any) => StyleSheet.create({
     shadowColor: Colors.primary, shadowOpacity: 0.3, shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 }, elevation: 6,
   },
-  primaryBtnText: { fontSize: 17, fontWeight: '800', color: colors.surface },
+  primaryBtnText: { fontSize: 17, fontWeight: '800', color: '#FFF' },
 
   secondaryBtn: {
     width: '100%', alignItems: 'center', paddingVertical: 14,
   },
   secondaryBtnText: { fontSize: 15, fontWeight: '700', color: Colors.primary },
-})
-;
+});

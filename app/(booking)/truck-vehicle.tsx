@@ -3,69 +3,33 @@ import {
   View,
   Text,
   StyleSheet,
+  FlatList,
   TouchableOpacity,
   ImageBackground,
   Image,
   ImageSourcePropType,
-  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { ArrowLeft, Clock, Check, Minus, Plus, MapPin, Circle, ArrowUpDown } from 'lucide-react-native';
+import { ArrowLeft, Clock, Check, Minus, Plus } from 'lucide-react-native';
 import { Colors } from '../../theme/colors';
 import { useTheme } from '../../theme/ThemeContext';
 import { Button } from '../../components/common/Button';
 import { useBookingStore } from '../../store/bookingStore';
-import { TRUCK_VEHICLES, INTERCITY_TRUCK_VEHICLES, HELPER_PRICE_PER_PERSON, MAX_HELPERS } from '../../constants/mockData';
-import HOME_BG from '../../assets/bg/homeBg';
+import { TRUCK_VEHICLES, HELPER_PRICE_PER_PERSON, MAX_HELPERS } from '../../constants/mockData';
 
 const TRUCK_IMAGES: Record<string, ImageSourcePropType> = {
   mini_truck: require('../../assets/images/icon-mini-truck.png'),
   truck: require('../../assets/images/truck.png'),
 };
 
-// Porter-style dimension labels per vehicle
-const VEHICLE_DIMENSIONS: Record<string, { length: string; width: string; height: string }> = {
-  mini_truck:         { length: '7', width: '4', height: '5 FT' },
-  pickup_8ft:         { length: '8', width: '5', height: '5 FT' },
-  truck_14ft:         { length: '14', width: '7', height: '7 FT' },
-  intercity_mini:     { length: '7', width: '4', height: '5 FT' },
-  intercity_pickup:   { length: '8', width: '5', height: '5 FT' },
-  intercity_truck14:  { length: '14', width: '7', height: '7 FT' },
-  intercity_truck20:  { length: '20', width: '8', height: '8 FT' },
-};
-
-type VehicleItem = {
-  id: string;
-  name: string;
-  description: string;
-  capacity: string;
-  eta: string;
-  fare: number;
-  icon: string;
-};
-
 export default function TruckVehicleScreen() {
-  const { colors, isDark } = useTheme();
-  const styles = makeStyles(colors);
-  const {
-    setSelectedVehicle,
-    setEstimatedFare,
-    setHelperCount,
-    pickup,
-    drop,
-    tripMode,
-  } = useBookingStore();
-
+  const { colors } = useTheme();
+  const { setSelectedVehicle, setEstimatedFare, setHelperCount } = useBookingStore();
   const [selected, setSelected] = useState<string | null>(null);
   const [helpers, setHelpers] = useState(0);
 
-  const vehicles: VehicleItem[] =
-    tripMode === 'inter_cities'
-      ? INTERCITY_TRUCK_VEHICLES.map((v) => ({ ...v, fare: v.baseFare }))
-      : TRUCK_VEHICLES;
-
-  const selectedTruck = vehicles.find((v) => v.id === selected) ?? null;
+  const selectedTruck = TRUCK_VEHICLES.find((v) => v.id === selected) ?? null;
   const helperCost = helpers * HELPER_PRICE_PER_PERSON;
   const totalFare = selectedTruck ? selectedTruck.fare + helperCost : 0;
 
@@ -74,14 +38,16 @@ export default function TruckVehicleScreen() {
     setSelectedVehicle(selectedTruck.id);
     setEstimatedFare(totalFare);
     setHelperCount(helpers);
-    router.push('/(booking)/fare');
+    router.push('/(booking)/schedule');
   };
 
-
-
   return (
-    <ImageBackground source={HOME_BG} style={styles.backgroundImage} resizeMode="cover">
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+    <ImageBackground
+      source={require('../../assets/images/home-bg.png')}
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
+      <SafeAreaView style={styles.safe}>
         {/* ── Hero Header ── */}
         <View style={styles.heroHeader}>
           <View style={styles.heroTopRow}>
@@ -93,308 +59,315 @@ export default function TruckVehicleScreen() {
               <ArrowLeft size={20} color="#FF6B00" />
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
-              <Text style={styles.heroTitle}>Select Vehicle</Text>
-              <Text style={styles.heroSubtitle}>
-                {tripMode === 'inter_cities' ? 'Intercity · Choose your truck' : 'Local · Choose your truck'}
-              </Text>
+              <Text style={styles.heroTitle}>Choose Truck</Text>
+              <Text style={styles.heroSubtitle}>Select a vehicle for your goods</Text>
             </View>
           </View>
 
-          {/* Route summary card — Porter style */}
-          <View style={styles.routeCard}>
-            <View style={styles.routeRow}>
-              <View style={styles.routeDot}>
-                <View style={styles.dotGreen} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.routeContactName, { color: colors.textSecondary }]}>
-                  {pickup?.label ?? 'Pickup'}
-                </Text>
-                <Text style={[styles.routeAddress, { color: colors.textPrimary }]} numberOfLines={1}>
-                  {pickup?.address ?? '—'}
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={styles.swapBtn}
-                onPress={() => {
-                  // swap is visual only on this screen; actual store swap would need store action
-                }}
-                accessibilityLabel="Swap pickup and drop"
-              >
-                <ArrowUpDown size={16} color={Colors.primary} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.routeDivider} />
-
-            <View style={styles.routeRow}>
-              <View style={styles.routeDot}>
-                <View style={styles.dotRed} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.routeContactName, { color: colors.textSecondary }]}>
-                  {drop?.label ?? 'Drop'}
-                </Text>
-                <Text style={[styles.routeAddress, { color: colors.textPrimary }]} numberOfLines={1}>
-                  {drop?.address ?? '—'}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.routeActions}>
-              <TouchableOpacity style={styles.routeActionBtn} onPress={() => router.back()}>
-                <Text style={styles.routeActionText}>+ Add Stop</Text>
-              </TouchableOpacity>
-              <View style={styles.routeActionDivider} />
-              <TouchableOpacity style={styles.routeActionBtn} onPress={() => router.back()}>
-                <Text style={styles.routeActionText}>✏ Edit Locations</Text>
-              </TouchableOpacity>
+          <View style={styles.chipsRow}>
+            <View style={styles.chip}>
+              <Text style={styles.chipText}>💡 Price includes fuel & tolls</Text>
             </View>
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-          <View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
-            {vehicles.map((item, idx) => {
-              const isActive = selected === item.id;
-              const isLast = idx === vehicles.length - 1;
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[
-                    styles.row,
-                    !isLast && { borderBottomWidth: 1, borderBottomColor: colors.cardBorder },
-                    isActive && { backgroundColor: colors.subtleBg },
-                  ]}
-                  onPress={() => setSelected(item.id)}
-                  accessibilityLabel={`Select ${item.name}`}
-                  activeOpacity={0.85}
-                >
-                  <Image
-                    source={TRUCK_IMAGES[item.icon] ?? TRUCK_IMAGES.mini_truck}
-                    style={styles.vehicleImage}
-                  />
+        <FlatList
+          data={TRUCK_VEHICLES}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => {
+            const isActive = selected === item.id;
+            return (
+              <TouchableOpacity
+                style={[styles.vehicleCard, isActive && styles.vehicleCardActive]}
+                onPress={() => setSelected(item.id)}
+                accessibilityLabel={`Select ${item.name}, ₹${item.fare}, ETA ${item.eta}`}
+                activeOpacity={0.85}
+              >
+                <Image
+                  source={TRUCK_IMAGES[item.icon] ?? TRUCK_IMAGES.mini_truck}
+                  style={styles.vehicleImage}
+                />
 
-                  <View style={styles.vehicleInfo}>
-                    <View style={styles.vehicleNameRow}>
-                      <Text style={[styles.vehicleName, { color: colors.textPrimary }]}>{item.name}</Text>
-                      {isActive && (
-                        <View style={styles.checkCircle}>
-                          <Check size={11} color={Colors.white} />
-                        </View>
-                      )}
+                <View style={styles.vehicleInfo}>
+                  <Text style={[styles.vehicleName, { color: colors.textPrimary }]}>{item.name}</Text>
+                  <Text style={[styles.vehicleDesc, { color: colors.textSecondary }]}>{item.description}</Text>
+                  <View style={styles.metaRow}>
+                    <View style={styles.capacityBadge}>
+                      <Text style={styles.capacityBadgeText}>{item.capacity}</Text>
                     </View>
-                    <Text style={[styles.vehicleDesc, { color: colors.textSecondary }]} numberOfLines={1}>
-                      {item.description}
+                    <Clock size={12} color={Colors.primary} />
+                    <Text style={styles.etaText}>{item.eta}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.fareArea}>
+                  <Text style={[styles.fareText, isActive && styles.fareTextActive]}>₹{item.fare}</Text>
+                  {isActive && (
+                    <View style={styles.checkCircle}>
+                      <Check size={12} color={Colors.white} />
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          }}
+          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+          ListFooterComponent={
+            <View style={styles.footer}>
+              {/* ── Loading & Unloading Help ── */}
+              <View style={styles.helperCard}>
+                <Text style={styles.cardLabel}>🧑‍🤝‍🧑 LOADING & UNLOADING HELP</Text>
+                <View style={styles.helperRow}>
+                  <Image
+                    source={require('../../assets/images/icon-handtruck.png')}
+                    style={styles.helperImage}
+                  />
+                  <View style={styles.helperInfo}>
+                    <Text style={[styles.helperTitle, { color: colors.textPrimary }]}>
+                      Need help with loading?
                     </Text>
-                    <View style={styles.metaRow}>
-                      <View style={styles.capacityBadge}>
-                        <Text style={styles.capacityBadgeText}>{item.capacity}</Text>
-                      </View>
-                      <Clock size={11} color={Colors.primary} />
-                      <Text style={styles.etaText}>{item.eta}</Text>
-                    </View>
+                    <Text style={[styles.helperSubtitle, { color: colors.textSecondary }]}>
+                      ₹{HELPER_PRICE_PER_PERSON} per helper
+                    </Text>
                   </View>
 
-                  <Text style={[styles.fareText, isActive && styles.fareTextActive]}>
-                    ₹{item.fare}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          <View style={styles.footer}>
-            {/* ── Helper Stepper ── */}
-            <View style={styles.helperCard}>
-              <Text style={styles.cardLabel}>🧑‍🤝‍🧑 LOADING & UNLOADING HELP</Text>
-              <View style={styles.helperRow}>
-                <Image
-                  source={require('../../assets/images/icon-handtruck.png')}
-                  style={styles.helperImage}
-                />
-                <View style={styles.helperInfo}>
-                  <Text style={[styles.helperTitle, { color: colors.textPrimary }]}>
-                    Need help with loading?
-                  </Text>
-                  <Text style={[styles.helperSubtitle, { color: colors.textSecondary }]}>
-                    ₹{HELPER_PRICE_PER_PERSON} per helper
-                  </Text>
+                  <View style={styles.stepper}>
+                    <TouchableOpacity
+                      style={[styles.stepperBtn, helpers === 0 && styles.stepperBtnDisabled]}
+                      onPress={() => setHelpers((h) => Math.max(0, h - 1))}
+                      disabled={helpers === 0}
+                      accessibilityLabel="Remove a helper"
+                    >
+                      <Minus size={16} color={helpers === 0 ? '#C4C4C4' : Colors.primary} />
+                    </TouchableOpacity>
+                    <Text style={styles.stepperCount}>{helpers}</Text>
+                    <TouchableOpacity
+                      style={[styles.stepperBtn, helpers === MAX_HELPERS && styles.stepperBtnDisabled]}
+                      onPress={() => setHelpers((h) => Math.min(MAX_HELPERS, h + 1))}
+                      disabled={helpers === MAX_HELPERS}
+                      accessibilityLabel="Add a helper"
+                    >
+                      <Plus size={16} color={helpers === MAX_HELPERS ? '#C4C4C4' : Colors.primary} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
-                <View style={styles.stepper}>
-                  <TouchableOpacity
-                    style={[styles.stepperBtn, helpers === 0 && styles.stepperBtnDisabled]}
-                    onPress={() => setHelpers((h) => Math.max(0, h - 1))}
-                    disabled={helpers === 0}
-                  >
-                    <Minus size={16} color={helpers === 0 ? colors.border : Colors.primary} />
-                  </TouchableOpacity>
-                  <Text style={styles.stepperCount}>{helpers}</Text>
-                  <TouchableOpacity
-                    style={[styles.stepperBtn, helpers === MAX_HELPERS && styles.stepperBtnDisabled]}
-                    onPress={() => setHelpers((h) => Math.min(MAX_HELPERS, h + 1))}
-                    disabled={helpers === MAX_HELPERS}
-                  >
-                    <Plus size={16} color={helpers === MAX_HELPERS ? colors.border : Colors.primary} />
-                  </TouchableOpacity>
-                </View>
+                {helpers > 0 && (
+                  <Text style={styles.helperCostNote}>
+                    Helper cost: ₹{helperCost} ({helpers} × ₹{HELPER_PRICE_PER_PERSON})
+                  </Text>
+                )}
               </View>
 
-              {helpers > 0 && (
-                <Text style={styles.helperCostNote}>
-                  Helper cost: ₹{helperCost} ({helpers} × ₹{HELPER_PRICE_PER_PERSON})
-                </Text>
-              )}
+              <Button
+                label={selectedTruck ? `Confirm Truck · ₹${totalFare}` : 'Confirm Truck'}
+                onPress={handleContinue}
+                disabled={!selectedTruck}
+                style={{ width: '100%' }}
+                accessibilityLabel="Confirm selected truck"
+              />
             </View>
-
-            <Button
-              label={selectedTruck ? `Proceed with ${selectedTruck.name}` : 'Select a Vehicle'}
-              onPress={handleContinue}
-              disabled={!selectedTruck}
-              style={{ width: '100%' }}
-            />
-          </View>
-        </ScrollView>
+          }
+        />
       </SafeAreaView>
     </ImageBackground>
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: 'transparent' },
-  backgroundImage: { flex: 1, width: '100%', height: '100%' },
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+
+  backgroundImage: {
+    flex: 1,
+  },
 
   heroHeader: {
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 20,
+    paddingBottom: 28,
+
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
+
     overflow: 'hidden',
-    backgroundColor: colors.surfaceElevated,
+
+    backgroundColor: 'rgba(255,255,255,0.18)',
+
     marginBottom: 16,
-    gap: 14,
   },
+
   heroTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
+    marginBottom: 16,
   },
+
   backBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.surface,
+
+    backgroundColor: '#FFFFFF',
+
     borderWidth: 1,
-    borderColor: colors.iconBorder,
+    borderColor: '#FFD6B3',
+
     justifyContent: 'center',
     alignItems: 'center',
   },
-  heroTitle: { fontSize: 22, fontWeight: '800', color: '#FF6B00', letterSpacing: -0.5 },
-  heroSubtitle: { fontSize: 12, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
 
-  // Porter-style route card
-  routeCard: {
-    backgroundColor: colors.surface,
+  heroTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FF6B00',
+    letterSpacing: -0.5,
+  },
+
+  heroSubtitle: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+    marginTop: 2,
+  },
+
+  chipsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+
+  chip: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
-    overflow: 'hidden',
+    borderColor: 'rgba(255,255,255,0.25)',
   },
-  routeRow: {
+
+  chipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#FF6B00',
+  },
+
+  list: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    paddingTop: 4,
+  },
+
+  vehicleCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 10,
-  },
-  routeDot: { width: 24, alignItems: 'center' },
-  dotGreen: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#22C55E' },
-  dotRed: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#EF4444' },
-  routeContactName: { fontSize: 11, fontWeight: '600', marginBottom: 1 },
-  routeAddress: { fontSize: 13, fontWeight: '600', lineHeight: 18 },
-  routeDivider: { height: 1, backgroundColor: colors.cardBorder, marginLeft: 48 },
-  swapBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.iconBg,
-    borderWidth: 1,
-    borderColor: colors.iconBorder,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  routeActions: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: colors.cardBorder,
-  },
-  routeActionBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  routeActionText: { fontSize: 13, fontWeight: '700', color: Colors.primary },
-  routeActionDivider: { width: 1, backgroundColor: colors.cardBorder },
-
-  list: { paddingHorizontal: 16, paddingBottom: 16, paddingTop: 4 },
-
-  // Single container that holds every truck option as a compact row.
-  container: {
-    borderRadius: 22,
-    borderWidth: 1,
-    overflow: 'hidden',
+    gap: 14,
+    borderRadius: 24,
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#FFE8D6',
     shadowColor: '#FF6B00',
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.07,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    elevation: 4,
   },
-  row: {
+
+  vehicleCardActive: {
+    borderColor: Colors.primary,
+    borderWidth: 2,
+    backgroundColor: '#FFF7F2',
+  },
+
+  vehicleImage: {
+    width: 72,
+    height: 72,
+    resizeMode: 'contain',
+  },
+
+  vehicleInfo: {
+    flex: 1,
+    gap: 3,
+  },
+
+  vehicleName: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  vehicleDesc: {
+    fontSize: 12,
+  },
+
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    gap: 4,
+    marginTop: 4,
+    flexWrap: 'wrap',
   },
-  vehicleImage: { width: 52, height: 52, resizeMode: 'contain' },
 
-  vehicleInfo: { flex: 1, gap: 3 },
-  vehicleNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  vehicleName: { fontSize: 14, fontWeight: '700' },
-  vehicleDesc: { fontSize: 11 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3, flexWrap: 'wrap' },
   capacityBadge: {
-    backgroundColor: colors.iconBg,
-    paddingHorizontal: 7,
+    backgroundColor: '#FFF0E6',
+    paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
     marginRight: 6,
   },
-  capacityBadgeText: { fontSize: 10, fontWeight: '700', color: Colors.primary },
-  etaText: { fontSize: 11, fontWeight: '600', color: Colors.primary },
 
-  fareText: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
-  fareTextActive: { color: Colors.primary },
+  capacityBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+
+  etaText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.primary,
+  },
+
+  fareArea: {
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+
+  fareText: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1A1A1A',
+  },
+
+  fareTextActive: {
+    color: Colors.primary,
+  },
 
   checkCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
-  footer: { paddingTop: 4, paddingBottom: 32, gap: 14 },
+  footer: {
+    paddingTop: 4,
+    paddingBottom: 32,
+    gap: 14,
+  },
 
   helperCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 18,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: '#FFE8D6',
     shadowColor: '#FF6B00',
     shadowOpacity: 0.08,
     shadowRadius: 16,
@@ -402,47 +375,81 @@ const makeStyles = (colors: any) => StyleSheet.create({
     elevation: 6,
     gap: 8,
   },
+
   cardLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: colors.placeholder,
+    color: '#9CA3AF',
     letterSpacing: 1.2,
     marginBottom: 4,
   },
-  helperRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  helperImage: { width: 48, height: 48, resizeMode: 'contain' },
-  helperInfo: { flex: 1, gap: 2 },
-  helperTitle: { fontSize: 14, fontWeight: '700' },
-  helperSubtitle: { fontSize: 12, fontWeight: '500' },
+
+  helperRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+
+  helperImage: {
+    width: 48,
+    height: 48,
+    resizeMode: 'contain',
+  },
+
+  helperInfo: {
+    flex: 1,
+    gap: 2,
+  },
+
+  helperTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  helperSubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
 
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: colors.subtleBg,
+    backgroundColor: '#FFF7F2',
     borderRadius: 20,
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: colors.iconBorder,
+    borderColor: '#FFD6B3',
   },
+
   stepperBtn: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.iconBorder,
+    borderColor: '#FFD6B3',
   },
-  stepperBtnDisabled: { opacity: 0.5 },
+
+  stepperBtnDisabled: {
+    opacity: 0.5,
+  },
+
   stepperCount: {
     fontSize: 15,
     fontWeight: '800',
-    color: colors.textPrimary,
+    color: '#1A1A1A',
     minWidth: 16,
     textAlign: 'center',
   },
-  helperCostNote: { fontSize: 12, fontWeight: '600', color: Colors.primary, marginTop: 2 },
+
+  helperCostNote: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.primary,
+    marginTop: 2,
+  },
 });

@@ -25,11 +25,9 @@ import {
 } from 'lucide-react-native';
 import { Colors } from '../../theme/colors';
 import { useTheme } from '../../theme/ThemeContext';
-import { useLanguage } from '../../theme/LanguageContext';
 import { Button } from '../../components/common/Button';
 import { useSavedAddressStore, type AddressIconKey } from '../../store/savedAddressStore';
 import { validateAddressLabel, validateAddress } from '../../utils/validators';
-import HOME_BG from '../../assets/bg/homeBg';
 
 type AddressIcon = AddressIconKey;
 
@@ -53,11 +51,9 @@ function AddressIcon({ icon, size = 18, color }: { icon: AddressIcon; size?: num
 }
 
 export default function SavedAddressesScreen() {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
+  const { colors } = useTheme();
 
   const { addresses, addAddress, updateAddress, removeAddress } = useSavedAddressStore();
-  const { t } = useLanguage();
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -128,12 +124,12 @@ export default function SavedAddressesScreen() {
 
   const handleDelete = (id: string, label: string) => {
     Alert.alert(
-      t('confirmDelete'),
+      'Remove Address',
       `Remove "${label}" from saved addresses?`,
       [
-        { text: t('cancel'), style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: t('delete'),
+          text: 'Remove',
           style: 'destructive',
           onPress: () => removeAddress(id),
         },
@@ -146,11 +142,11 @@ export default function SavedAddressesScreen() {
 
   return (
     <ImageBackground
-      source={HOME_BG}
+      source={require('../../assets/images/home-bg.png')}
       style={styles.bg}
       resizeMode="cover"
     >
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <SafeAreaView style={styles.safe}>
         {/* Hero Header */}
         <View style={styles.heroHeader}>
           <View style={styles.heroTopRow}>
@@ -158,7 +154,7 @@ export default function SavedAddressesScreen() {
               <ArrowLeft size={20} color="#FF6B00" />
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
-              <Text style={styles.heroTitle}>{t('savedAddressesTitle')}</Text>
+              <Text style={styles.heroTitle}>Saved Addresses</Text>
               <Text style={styles.heroSubtitle}>Your frequently used locations</Text>
             </View>
             <TouchableOpacity onPress={openAdd} style={styles.addBtn}>
@@ -180,11 +176,11 @@ export default function SavedAddressesScreen() {
               <Text style={styles.emptyEmoji}>📍</Text>
               <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No saved addresses</Text>
               <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                {t('savedAddressesHint')}
+                Save your home, work and frequent locations for faster booking
               </Text>
               <TouchableOpacity style={styles.emptyAddBtn} onPress={openAdd}>
                 <Plus size={16} color="#FF6B00" />
-                <Text style={styles.emptyAddText}>{t('addAddress')}</Text>
+                <Text style={styles.emptyAddText}>Add Address</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -232,7 +228,7 @@ export default function SavedAddressesScreen() {
 
           <View style={styles.infoCard}>
             <Text style={styles.infoText}>
-              {t('savedAddressesProTip')}
+              💡 Saved addresses appear as quick-select options when booking a ride or delivery.
             </Text>
           </View>
         </ScrollView>
@@ -250,7 +246,7 @@ export default function SavedAddressesScreen() {
 
               <View style={styles.sheetHeaderRow}>
                 <Text style={[styles.sheetTitle, { color: colors.textPrimary }]}>
-                  {editingId ? t('editAddress') : t('addAddress')}
+                  {editingId ? 'Edit Address' : 'Add New Address'}
                 </Text>
                 <TouchableOpacity onPress={() => setShowModal(false)} style={styles.closeBtn}>
                   <X size={18} color={colors.textSecondary} />
@@ -316,7 +312,7 @@ export default function SavedAddressesScreen() {
               {addressError ? <Text style={styles.errorText}>{addressError}</Text> : null}
 
               <Button
-                label={editingId ? t('save') : t('addAddress')}
+                label={editingId ? 'Save Changes' : 'Add Address'}
                 onPress={handleSave}
                 disabled={!canSave}
                 style={{ marginTop: 8 }}
@@ -329,30 +325,30 @@ export default function SavedAddressesScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
-  bg: { flex: 1, width: '100%', height: '100%' },
+const styles = StyleSheet.create({
+  bg: { flex: 1 },
   safe: { flex: 1, backgroundColor: 'transparent' },
 
   heroHeader: {
     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24,
     borderBottomLeftRadius: 36, borderBottomRightRadius: 36,
-    overflow: 'hidden', backgroundColor: colors.surfaceElevated, marginBottom: 16,
+    overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.18)', marginBottom: 16,
     gap: 12,
   },
   heroTopRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: colors.iconBorder, justifyContent: 'center', alignItems: 'center',
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF',
+    borderWidth: 1, borderColor: '#FFD6B3', justifyContent: 'center', alignItems: 'center',
   },
   heroTitle: { fontSize: 22, fontWeight: '800', color: '#FF6B00', letterSpacing: -0.5 },
-  heroSubtitle: { fontSize: 12, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
+  heroSubtitle: { fontSize: 12, color: '#666', fontWeight: '500', marginTop: 2 },
   addBtn: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: colors.iconBorder, justifyContent: 'center', alignItems: 'center',
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF',
+    borderWidth: 1, borderColor: '#FFD6B3', justifyContent: 'center', alignItems: 'center',
   },
   chipsRow: { flexDirection: 'row', gap: 8 },
   chip: {
-    backgroundColor: colors.surface, paddingHorizontal: 12, paddingVertical: 6,
+    backgroundColor: '#FFFFFF', paddingHorizontal: 12, paddingVertical: 6,
     borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
   },
   chipText: { fontSize: 11, fontWeight: '600', color: '#FF6B00' },
@@ -361,15 +357,15 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
   addressCard: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: colors.surface, borderRadius: 20, padding: 16,
-    borderWidth: 1.5, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16,
+    borderWidth: 1.5, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.07, shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 }, elevation: 4,
   },
   addressIconWrap: {
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: colors.iconBg, justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: colors.iconBorder,
+    backgroundColor: '#FFF0E6', justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: '#FFD6B3',
   },
   addressInfo: { flex: 1, gap: 3 },
   addressLabel: { fontSize: 15, fontWeight: '700' },
@@ -377,19 +373,19 @@ const makeStyles = (colors: any) => StyleSheet.create({
   addressActions: { flexDirection: 'row', gap: 8 },
   actionBtn: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: colors.iconBg, justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: colors.iconBorder,
+    backgroundColor: '#FFF0E6', justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: '#FFD6B3',
   },
   actionBtnDanger: { backgroundColor: '#FFF0F0', borderColor: '#FFCDD2' },
 
   addMoreBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: colors.surface, borderRadius: 20, padding: 16,
-    borderWidth: 1.5, borderColor: colors.cardBorder, borderStyle: 'dashed',
+    backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16,
+    borderWidth: 1.5, borderColor: '#FFE8D6', borderStyle: 'dashed',
   },
   addMoreIcon: {
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: colors.iconBg, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#FFF0E6', justifyContent: 'center', alignItems: 'center',
   },
   addMoreText: { fontSize: 14, fontWeight: '600', color: Colors.primary },
 
@@ -399,16 +395,16 @@ const makeStyles = (colors: any) => StyleSheet.create({
   emptySubtitle: { fontSize: 13, textAlign: 'center', lineHeight: 19, paddingHorizontal: 24 },
   emptyAddBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    marginTop: 8, backgroundColor: colors.iconBg, paddingHorizontal: 20, paddingVertical: 12,
-    borderRadius: 20, borderWidth: 1, borderColor: colors.iconBorder,
+    marginTop: 8, backgroundColor: '#FFF0E6', paddingHorizontal: 20, paddingVertical: 12,
+    borderRadius: 20, borderWidth: 1, borderColor: '#FFD6B3',
   },
   emptyAddText: { fontSize: 14, fontWeight: '700', color: Colors.primary },
 
   infoCard: {
-    backgroundColor: colors.subtleBg, borderRadius: 16, padding: 14,
-    borderWidth: 1, borderColor: colors.cardBorder,
+    backgroundColor: '#FFF7F2', borderRadius: 16, padding: 14,
+    borderWidth: 1, borderColor: '#FFE8D6',
   },
-  infoText: { fontSize: 13, lineHeight: 19, color: '#F59E0B' },
+  infoText: { fontSize: 13, lineHeight: 19, color: '#7C4A00' },
 
   modalOverlay: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end',
@@ -418,7 +414,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     padding: 24, paddingBottom: 48, gap: 12,
   },
   sheetHandle: {
-    width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border,
+    width: 40, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB',
     alignSelf: 'center', marginBottom: 8,
   },
   sheetHeaderRow: {
@@ -427,7 +423,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   sheetTitle: { fontSize: 20, fontWeight: '800' },
   closeBtn: {
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: colors.divider, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center',
   },
 
   fieldLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, marginBottom: -4 },
@@ -435,11 +431,11 @@ const makeStyles = (colors: any) => StyleSheet.create({
   iconPickerRow: { flexDirection: 'row', gap: 10 },
   iconOption: {
     flex: 1, alignItems: 'center', gap: 6, paddingVertical: 12,
-    borderRadius: 16, borderWidth: 1.5, borderColor: colors.cardBorder,
-    backgroundColor: colors.inputBackground, position: 'relative',
+    borderRadius: 16, borderWidth: 1.5, borderColor: '#FFE8D6',
+    backgroundColor: '#FAFAFA', position: 'relative',
   },
-  iconOptionActive: { borderColor: Colors.primary, backgroundColor: colors.subtleBg },
-  iconOptionLabel: { fontSize: 12, fontWeight: '600', color: colors.placeholder },
+  iconOptionActive: { borderColor: Colors.primary, backgroundColor: '#FFF7F2' },
+  iconOptionLabel: { fontSize: 12, fontWeight: '600', color: '#9CA3AF' },
   iconOptionLabelActive: { color: Colors.primary },
   iconCheck: {
     position: 'absolute', top: 6, right: 6,
@@ -449,11 +445,10 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
   inputBox: {
     borderWidth: 1.5, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 4,
-    backgroundColor: colors.inputBackground,
+    backgroundColor: '#FAFAFA',
   },
   inputBoxMultiline: { paddingVertical: 10 },
   input: { fontSize: 15, paddingVertical: 10 },
   inputMultiline: { minHeight: 72, textAlignVertical: 'top' },
-  errorText: { fontSize: 12, color: Colors.danger, marginTop: -6, marginLeft: 4 },
-})
-;
+  errorText: { fontSize: 12, color: '#EF4444', marginTop: -6, marginLeft: 4 },
+});

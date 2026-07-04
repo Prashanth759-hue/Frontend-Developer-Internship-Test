@@ -8,21 +8,13 @@ import { router } from 'expo-router';
 import { ArrowLeft, Wallet, ChevronRight, Shield } from 'lucide-react-native';
 import { Colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
-import { useLanguage } from '../theme/LanguageContext';
-import HOME_BG from '../assets/bg/homeBg';
-import PaymentOptionsModal from '../components/booking/PaymentOptionsModal';
-import type { PaymentMode } from '../store/bookingStore';
 
 const QUICK_AMOUNTS = [100, 200, 500, 1000, 2000, 5000];
 
 export default function AddMoneyScreen() {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
-  const { t } = useLanguage();
+  const { colors } = useTheme();
   const [amount, setAmount] = useState('');
   const [error, setError] = useState('');
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [payMode, setPayMode] = useState<PaymentMode>('upi');
 
   const numericAmount = parseInt(amount.replace(/[^0-9]/g, ''), 10) || 0;
   const isValid = numericAmount >= 10 && numericAmount <= 50000;
@@ -47,39 +39,26 @@ export default function AddMoneyScreen() {
       setError('Maximum add money amount is ₹50,000.');
       return;
     }
-    setShowPaymentModal(true);
-  };
-
-  const handlePaymentModalContinue = () => {
-    setShowPaymentModal(false);
     router.push({
       pathname: '/payment-processing',
       params: { amount: String(numericAmount), type: 'add_money' },
     });
   };
 
-  const PAY_VIA_LABELS: Record<PaymentMode, string> = {
-    upi: 'UPI',
-    card: 'Debit / Credit Card',
-    netbanking: 'Net Banking',
-    wallet: 'Vahan Pay',
-    cash: 'Cash',
-  };
-
   return (
     <ImageBackground
-      source={HOME_BG}
+      source={require('../assets/images/home-bg.png')}
       style={styles.bg}
       resizeMode="cover"
     >
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <SafeAreaView style={styles.safe}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <ArrowLeft size={20} color="#FF6B00" />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>{t('addMoney')}</Text>
+            <Text style={styles.headerTitle}>Add Money</Text>
             <Text style={styles.headerSub}>Top up your Vahan Pay wallet</Text>
           </View>
           <View style={styles.walletIcon}>
@@ -145,16 +124,9 @@ export default function AddMoneyScreen() {
           {/* Payment Methods */}
           <View style={styles.card}>
             <Text style={styles.cardLabel}>PAY VIA</Text>
-            {(['upi', 'card', 'netbanking'] as PaymentMode[]).map((method) => (
-              <TouchableOpacity
-                key={method}
-                style={styles.payMethodRow}
-                onPress={() => { setPayMode(method); setShowPaymentModal(true); }}
-                accessibilityLabel={`Pay via ${PAY_VIA_LABELS[method]}`}
-              >
-                <Text style={[styles.payMethodText, { color: payMode === method ? Colors.primary : colors.textPrimary }]}>
-                  {PAY_VIA_LABELS[method]}
-                </Text>
+            {['UPI', 'Debit / Credit Card', 'Net Banking'].map((method) => (
+              <TouchableOpacity key={method} style={styles.payMethodRow}>
+                <Text style={[styles.payMethodText, { color: colors.textPrimary }]}>{method}</Text>
                 <ChevronRight size={18} color="#9CA3AF" />
               </TouchableOpacity>
             ))}
@@ -181,43 +153,30 @@ export default function AddMoneyScreen() {
 
         </ScrollView>
       </SafeAreaView>
-
-      <PaymentOptionsModal
-        visible={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        amount={numericAmount}
-        selected={payMode}
-        onSelect={setPayMode}
-        onContinue={handlePaymentModalContinue}
-        onAddCard={() => { setShowPaymentModal(false); router.push('/(main)/payment-methods'); }}
-        walletBalance={0}
-        title="Add Money via"
-        excludeModes={['wallet', 'cash']}
-      />
     </ImageBackground>
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
-  bg: { flex: 1, width: '100%', height: '100%' },
+const styles = StyleSheet.create({
+  bg: { flex: 1 },
   safe: { flex: 1, backgroundColor: 'transparent' },
 
   header: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24,
     borderBottomLeftRadius: 36, borderBottomRightRadius: 36,
-    backgroundColor: colors.surfaceElevated, marginBottom: 16,
+    backgroundColor: 'rgba(255,255,255,0.18)', marginBottom: 16,
   },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: colors.iconBorder, justifyContent: 'center', alignItems: 'center',
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFF',
+    borderWidth: 1, borderColor: '#FFD6B3', justifyContent: 'center', alignItems: 'center',
   },
   headerTitle: { fontSize: 22, fontWeight: '800', color: '#FF6B00', letterSpacing: -0.5 },
-  headerSub: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
+  headerSub: { fontSize: 12, color: '#666', marginTop: 2 },
   walletIcon: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: colors.iconBg,
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFF0E6',
     justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: colors.iconBorder,
+    borderWidth: 1, borderColor: '#FFD6B3',
   },
 
   content: { paddingHorizontal: 16, paddingBottom: 40, gap: 14 },
@@ -227,45 +186,45 @@ const makeStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center', gap: 6,
   },
   balanceLabel: { fontSize: 13, color: 'rgba(255,255,255,0.8)', fontWeight: '600' },
-  balanceValue: { fontSize: 36, fontWeight: '800', color: colors.surface },
+  balanceValue: { fontSize: 36, fontWeight: '800', color: '#FFF' },
 
   card: {
-    backgroundColor: colors.surface, borderRadius: 24, padding: 18, gap: 14,
-    borderWidth: 1.5, borderColor: colors.cardBorder,
+    backgroundColor: '#FFF', borderRadius: 24, padding: 18, gap: 14,
+    borderWidth: 1.5, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.06, shadowRadius: 10,
     shadowOffset: { width: 0, height: 3 }, elevation: 3,
   },
-  cardLabel: { fontSize: 10, fontWeight: '700', color: colors.placeholder, letterSpacing: 1.2 },
+  cardLabel: { fontSize: 10, fontWeight: '700', color: '#9CA3AF', letterSpacing: 1.2 },
 
   amountInputRow: {
     flexDirection: 'row', alignItems: 'center',
     borderWidth: 2, borderColor: Colors.primary, borderRadius: 20,
-    paddingHorizontal: 16, paddingVertical: 4, backgroundColor: colors.termsBg,
+    paddingHorizontal: 16, paddingVertical: 4, backgroundColor: '#FFFAF7',
   },
   amountInputError: { borderColor: Colors.danger },
-  rupeeSym: { fontSize: 28, fontWeight: '700', color: colors.placeholder, marginRight: 4 },
+  rupeeSym: { fontSize: 28, fontWeight: '700', color: '#9CA3AF', marginRight: 4 },
   amountInput: { flex: 1, fontSize: 36, fontWeight: '800', paddingVertical: 8 },
   errorText: { fontSize: 13, color: Colors.danger, fontWeight: '500' },
-  hintText: { fontSize: 12, color: colors.placeholder },
+  hintText: { fontSize: 12, color: '#9CA3AF' },
 
   quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   quickBtn: {
     paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20,
-    backgroundColor: colors.inputBackground, borderWidth: 1.5, borderColor: colors.cardBorder,
+    backgroundColor: '#FAFAFA', borderWidth: 1.5, borderColor: '#FFE8D6',
   },
-  quickBtnActive: { backgroundColor: colors.iconBg, borderColor: Colors.primary },
-  quickBtnText: { fontSize: 14, fontWeight: '700', color: colors.textSecondary },
+  quickBtnActive: { backgroundColor: '#FFF0E6', borderColor: Colors.primary },
+  quickBtnText: { fontSize: 14, fontWeight: '700', color: '#666' },
   quickBtnTextActive: { color: Colors.primary },
 
   payMethodRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.cardBorder,
+    paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#FFE8D6',
   },
   payMethodText: { fontSize: 15, fontWeight: '600' },
 
   securityCard: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 10,
-    backgroundColor: colors.surfaceElevated, borderRadius: 16, padding: 14,
+    backgroundColor: '#F0FDF4', borderRadius: 16, padding: 14,
     borderWidth: 1, borderColor: '#BBF7D0',
   },
   securityText: { flex: 1, fontSize: 12, color: '#166534', lineHeight: 18 },
@@ -276,7 +235,6 @@ const makeStyles = (colors: any) => StyleSheet.create({
     shadowColor: Colors.primary, shadowOpacity: 0.3, shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 }, elevation: 6,
   },
-  continueBtnDisabled: { backgroundColor: colors.border, shadowOpacity: 0 },
-  continueBtnText: { fontSize: 17, fontWeight: '800', color: colors.surface },
-})
-;
+  continueBtnDisabled: { backgroundColor: '#E5E7EB', shadowOpacity: 0 },
+  continueBtnText: { fontSize: 17, fontWeight: '800', color: '#FFF' },
+});

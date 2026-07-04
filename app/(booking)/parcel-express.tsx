@@ -7,9 +7,6 @@ import {
   TouchableOpacity,
   ImageBackground,
   TextInput,
-  Modal,
-  FlatList,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
@@ -28,13 +25,10 @@ import {
   MessageSquare,
   Shield,
   BookUser,
-  X,
-  SearchX,
-  ArrowUpDown,
 } from 'lucide-react-native';
+import { Alert } from 'react-native';
 import { Colors } from '../../theme/colors';
 import { useTheme } from '../../theme/ThemeContext';
-import { useLanguage } from '../../theme/LanguageContext';
 import { Button } from '../../components/common/Button';
 import { useBookingStore } from '../../store/bookingStore';
 import { useMapPickerStore } from '../../store/mapPickerStore';
@@ -50,8 +44,6 @@ import {
   sanitizePhone,
   sanitizeName,
 } from '../../utils/validators';
-import { requestContactsPermission, getContactsList, PickedContact } from '../../utils/permissions';
-import HOME_BG from '../../assets/bg/homeBg';
 
 type Step = 'address' | 'parcel' | 'confirm';
 
@@ -63,9 +55,7 @@ const STEP_LABELS: Record<Step, string> = {
 const STEPS: Step[] = ['address', 'parcel', 'confirm'];
 
 export default function ParcelExpressScreen() {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
-  const { t } = useLanguage();
+  const { colors } = useTheme();
   const { setPickup, setDrop, setEstimatedFare, setSelectedVehicle, setServiceType } =
     useBookingStore();
   const { result: mapResult, clearResult } = useMapPickerStore();
@@ -94,13 +84,6 @@ export default function ParcelExpressScreen() {
   const [selectedSlot, setSelectedSlot] = useState<string>(EXPRESS_TIME_SLOTS[0].id);
   const [parcelDesc, setParcelDesc] = useState('');
 
-  // Contact picker — permission is requested only when the user actually
-  // taps "Pick from contacts", never upfront.
-  const [showContactPicker, setShowContactPicker] = useState(false);
-  const [contactSearch, setContactSearch] = useState('');
-  const [contactsLoading, setContactsLoading] = useState(false);
-  const [contactsList, setContactsList] = useState<PickedContact[]>([]);
-
   // Errors
   const [receiverNameError, setReceiverNameError] = useState('');
   const [receiverPhoneError, setReceiverPhoneError] = useState('');
@@ -128,12 +111,6 @@ export default function ParcelExpressScreen() {
   // Validation
   const canProceedAddress = pickupText.trim().length > 2 && dropText.trim().length > 2;
 
-  const handleSwapLocations = () => {
-    const temp = pickupText;
-    setPickupText(dropText);
-    setDropText(temp);
-  };
-
   const validateParcelStep = (): boolean => {
     let hasError = false;
     const nameRes = validateName(receiverName);
@@ -147,29 +124,24 @@ export default function ParcelExpressScreen() {
     return !hasError;
   };
 
-  const handleContactPicker = async () => {
-    setContactsLoading(true);
-    setShowContactPicker(true);
-    setContactSearch('');
-
-    const status = await requestContactsPermission();
-    if (status !== 'granted') {
-      setShowContactPicker(false);
-      setContactsLoading(false);
-      return;
-    }
-
-    const list = await getContactsList();
-    setContactsList(list);
-    setContactsLoading(false);
-  };
-
-  const handleSelectContact = (contact: PickedContact) => {
-    setReceiverName(sanitizeName(contact.name));
-    setReceiverPhone(sanitizePhone(contact.phone));
-    setReceiverNameError('');
-    setReceiverPhoneError('');
-    setShowContactPicker(false);
+  const handleContactPicker = () => {
+    Alert.alert(
+      'Contact Permission',
+      'Allow Vahan360 to access your contacts to pick receiver details?',
+      [
+        { text: 'Deny', style: 'cancel' },
+        {
+          text: 'Allow',
+          onPress: () => {
+            // Simulated contact pick for demo
+            setReceiverName('Ravi Kumar');
+            setReceiverPhone('9876543210');
+            setReceiverNameError('');
+            setReceiverPhoneError('');
+          },
+        },
+      ]
+    );
   };
 
   const canProceedParcel =
@@ -251,8 +223,8 @@ export default function ParcelExpressScreen() {
             <Zap size={11} color="#FF6B00" fill="#FF6B00" />
             <Text style={styles.expressTagText}>EXPRESS</Text>
           </View>
-          <Text style={styles.heroTitle}>{t('parcelExpress')}</Text>
-          <Text style={styles.heroSubtitle}>{t('parcelExpressDesc')}</Text>
+          <Text style={styles.heroTitle}>Express Delivery</Text>
+          <Text style={styles.heroSubtitle}>Delivered in under 2 hours</Text>
         </View>
       </View>
       <View style={styles.chipsRow}>
@@ -268,11 +240,11 @@ export default function ParcelExpressScreen() {
   if (step === 'address') {
     return (
       <ImageBackground
-        source={HOME_BG}
+        source={require('../../assets/images/home-bg.png')}
         style={styles.bg}
         resizeMode="cover"
       >
-        <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+        <SafeAreaView style={styles.safe}>
           <HeroHeader />
           <ScrollView
             contentContainerStyle={styles.scrollContent}
@@ -283,39 +255,27 @@ export default function ParcelExpressScreen() {
             <View style={[styles.card, { zIndex: 20 }]}>
               <Text style={styles.cardLabel}>📍 PICKUP & DROP</Text>
 
-              <View style={styles.locationFieldsWrap}>
-                <LocationSearchInput
-                  value={pickupText}
-                  onChangeText={setPickupText}
-                  onSelect={setPickupText}
-                  placeholder="Pickup address"
-                  dotType="circle"
-                  dotColor={Colors.primary}
-                  fieldKey="pickup"
-                />
+              <LocationSearchInput
+                value={pickupText}
+                onChangeText={setPickupText}
+                onSelect={setPickupText}
+                placeholder="Pickup address"
+                dotType="circle"
+                dotColor={Colors.primary}
+                fieldKey="pickup"
+              />
 
-                <View style={styles.locationDivider} />
+              <View style={styles.locationDivider} />
 
-                <LocationSearchInput
-                  value={dropText}
-                  onChangeText={setDropText}
-                  onSelect={setDropText}
-                  placeholder="Drop address"
-                  dotType="pin"
-                  dotColor={Colors.danger}
-                  fieldKey="drop"
-                />
-
-                <TouchableOpacity
-                  style={styles.swapBtn}
-                  onPress={handleSwapLocations}
-                  accessibilityLabel="Swap pickup and drop locations"
-                  accessibilityRole="button"
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <ArrowUpDown size={16} color={Colors.primary} />
-                </TouchableOpacity>
-              </View>
+              <LocationSearchInput
+                value={dropText}
+                onChangeText={setDropText}
+                onSelect={setDropText}
+                placeholder="Drop address"
+                dotType="pin"
+                dotColor={Colors.danger}
+                fieldKey="drop"
+              />
             </View>
 
             {/* Express time slots */}
@@ -371,7 +331,7 @@ export default function ParcelExpressScreen() {
             </View>
 
             <Button
-              label={t('confirm')}
+              label="Continue to Parcel Details"
               onPress={handleAddressNext}
               disabled={!canProceedAddress}
               style={styles.ctaBtn}
@@ -387,11 +347,11 @@ export default function ParcelExpressScreen() {
   if (step === 'parcel') {
     return (
       <ImageBackground
-        source={HOME_BG}
+        source={require('../../assets/images/home-bg.png')}
         style={styles.bg}
         resizeMode="cover"
       >
-        <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+        <SafeAreaView style={styles.safe}>
           <HeroHeader />
           <ScrollView
             contentContainerStyle={styles.scrollContent}
@@ -530,7 +490,7 @@ export default function ParcelExpressScreen() {
             </View>
 
             <Button
-              label={t('confirm')}
+              label="Review & Confirm"
               onPress={handleParcelNext}
               disabled={!canProceedParcel}
               style={styles.ctaBtn}
@@ -538,91 +498,6 @@ export default function ParcelExpressScreen() {
             <View style={{ height: 32 }} />
           </ScrollView>
         </SafeAreaView>
-
-        {/* Contact picker — permission is requested only when this opens */}
-        <Modal
-          visible={showContactPicker}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setShowContactPicker(false)}
-        >
-          <View style={styles.contactModalOverlay}>
-            <View style={[styles.contactModalSheet, { backgroundColor: colors.surface }]}>
-              <View style={styles.contactModalHeader}>
-                <Text style={[styles.contactModalTitle, { color: colors.textPrimary }]}>
-                  Select a contact
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setShowContactPicker(false)}
-                  style={styles.contactModalCloseBtn}
-                  accessibilityLabel="Close"
-                >
-                  <X size={18} color={colors.textSecondary} />
-                </TouchableOpacity>
-              </View>
-
-              {!contactsLoading && (
-                <View style={styles.contactSearchRow}>
-                  <TextInput
-                    style={[styles.contactSearchInput, { color: colors.textPrimary }]}
-                    placeholder="Search contacts"
-                    placeholderTextColor="#AAAAAA"
-                    value={contactSearch}
-                    onChangeText={setContactSearch}
-                    autoCapitalize="words"
-                  />
-                </View>
-              )}
-
-              {contactsLoading ? (
-                <View style={styles.contactLoadingWrap}>
-                  <ActivityIndicator size="small" color={Colors.primary} />
-                  <Text style={styles.contactLoadingText}>Loading contacts…</Text>
-                </View>
-              ) : contactsList.length === 0 ? (
-                <View style={styles.contactEmptyWrap}>
-                  <SearchX size={28} color="#C4C4C4" />
-                  <Text style={styles.contactEmptyTitle}>No contacts found</Text>
-                  <Text style={styles.contactEmptyText}>
-                    We couldn't find any contacts with a phone number, or access wasn't granted.
-                  </Text>
-                </View>
-              ) : (
-                <FlatList
-                  data={contactsList.filter((c) =>
-                    c.name.toLowerCase().includes(contactSearch.trim().toLowerCase())
-                  )}
-                  keyExtractor={(item, idx) => `${item.phone}-${idx}`}
-                  style={{ maxHeight: 360 }}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={styles.contactRow}
-                      onPress={() => handleSelectContact(item)}
-                    >
-                      <View style={styles.contactAvatar}>
-                        <Text style={styles.contactAvatarText}>
-                          {item.name.trim().charAt(0).toUpperCase() || '?'}
-                        </Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.contactRowName, { color: colors.textPrimary }]} numberOfLines={1}>
-                          {item.name}
-                        </Text>
-                        <Text style={styles.contactRowPhone}>{item.phone}</Text>
-                      </View>
-                    </TouchableOpacity>
-                  )}
-                  ListEmptyComponent={
-                    <View style={styles.contactEmptyWrap}>
-                      <SearchX size={24} color="#C4C4C4" />
-                      <Text style={styles.contactEmptyTitle}>No matches</Text>
-                    </View>
-                  }
-                />
-              )}
-            </View>
-          </View>
-        </Modal>
       </ImageBackground>
     );
   }
@@ -630,11 +505,11 @@ export default function ParcelExpressScreen() {
   // ─── STEP 3: Confirm ──────────────────────────────────────────────────────
   return (
     <ImageBackground
-      source={HOME_BG}
+      source={require('../../assets/images/home-bg.png')}
       style={styles.bg}
       resizeMode="cover"
     >
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <SafeAreaView style={styles.safe}>
         <HeroHeader />
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -752,8 +627,8 @@ export default function ParcelExpressScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
-  bg: { flex: 1, width: '100%', height: '100%' },
+const styles = StyleSheet.create({
+  bg: { flex: 1 },
   safe: { flex: 1, backgroundColor: 'transparent' },
 
   heroHeader: {
@@ -763,31 +638,31 @@ const makeStyles = (colors: any) => StyleSheet.create({
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
     overflow: 'hidden',
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     marginBottom: 16,
     gap: 12,
   },
 
   heroTopRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: colors.iconBorder, justifyContent: 'center', alignItems: 'center',
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF',
+    borderWidth: 1, borderColor: '#FFD6B3', justifyContent: 'center', alignItems: 'center',
   },
 
   expressTag: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     alignSelf: 'flex-start',
-    backgroundColor: colors.iconBg, paddingHorizontal: 8, paddingVertical: 3,
-    borderRadius: 10, borderWidth: 1, borderColor: colors.iconBorder, marginBottom: 4,
+    backgroundColor: '#FFF0E6', paddingHorizontal: 8, paddingVertical: 3,
+    borderRadius: 10, borderWidth: 1, borderColor: '#FFD6B3', marginBottom: 4,
   },
   expressTagText: { fontSize: 10, fontWeight: '800', color: '#FF6B00', letterSpacing: 1 },
 
   heroTitle: { fontSize: 22, fontWeight: '800', color: '#FF6B00', letterSpacing: -0.5 },
-  heroSubtitle: { fontSize: 12, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
+  heroSubtitle: { fontSize: 12, color: '#666', fontWeight: '500', marginTop: 2 },
 
   chipsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   chip: {
-    backgroundColor: colors.surface, paddingHorizontal: 12, paddingVertical: 6,
+    backgroundColor: '#FFFFFF', paddingHorizontal: 12, paddingVertical: 6,
     borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
   },
   chipText: { fontSize: 11, fontWeight: '600', color: '#FF6B00' },
@@ -796,14 +671,14 @@ const makeStyles = (colors: any) => StyleSheet.create({
   stepItem: { alignItems: 'center', gap: 4 },
   stepDot: {
     width: 24, height: 24, borderRadius: 12,
-    backgroundColor: 'rgba(0,0,0,0.15)',
+    backgroundColor: 'rgba(255,255,255,0.4)',
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 2, borderColor: 'rgba(255,107,0,0.3)',
   },
   stepDotActive: { backgroundColor: '#FF6B00', borderColor: '#FF6B00' },
   stepDotDone: { backgroundColor: '#34D399', borderColor: '#34D399' },
   stepNum: { fontSize: 10, fontWeight: '800', color: '#FF6B00' },
-  stepNumActive: { color: colors.surface },
+  stepNumActive: { color: '#FFFFFF' },
   stepLabel: { fontSize: 9, fontWeight: '600', color: 'rgba(255,107,0,0.6)' },
   stepLabelActive: { color: '#FF6B00' },
   stepLine: { flex: 1, height: 2, backgroundColor: 'rgba(255,107,0,0.2)', marginHorizontal: 6, marginBottom: 14 },
@@ -812,65 +687,44 @@ const makeStyles = (colors: any) => StyleSheet.create({
   scrollContent: { paddingHorizontal: 16, paddingBottom: 32, gap: 14 },
 
   card: {
-    backgroundColor: colors.surface, borderRadius: 24, padding: 18,
-    borderWidth: 1, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18,
+    borderWidth: 1, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.08, shadowRadius: 16,
     shadowOffset: { width: 0, height: 6 }, elevation: 6,
     gap: 4,
   },
   cardLabel: {
-    fontSize: 10, fontWeight: '700', color: colors.placeholder,
+    fontSize: 10, fontWeight: '700', color: '#9CA3AF',
     letterSpacing: 1.2, marginBottom: 8,
   },
 
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   dotWrap: { width: 24, alignItems: 'center' },
   locationInput: { flex: 1, fontSize: 15, fontWeight: '500', paddingVertical: 10, minHeight: 44 },
-  locationDivider: { height: 1, backgroundColor: colors.cardBorder, marginLeft: 34, marginVertical: 2 },
-  locationFieldsWrap: { position: 'relative', paddingRight: 44 },
-  swapBtn: {
-  position: 'absolute',
-
-  right: 0,
-  top: 30,
-
-  width: 36,
-  height: 36,
-  borderRadius: 18,
-
-  justifyContent: 'center',
-  alignItems: 'center',
-
-  backgroundColor: colors.iconBg,
-  borderWidth: 1.5,
-  borderColor: colors.iconBorder,
-
-  zIndex: 1000,
-  elevation: 20,
-},
+  locationDivider: { height: 1, backgroundColor: '#FFE8D6', marginLeft: 34, marginVertical: 2 },
 
   slotRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: 14, borderRadius: 18, borderWidth: 1.5, borderColor: colors.cardBorder,
-    backgroundColor: colors.inputBackground, marginBottom: 8,
+    padding: 14, borderRadius: 18, borderWidth: 1.5, borderColor: '#FFE8D6',
+    backgroundColor: '#FAFAFA', marginBottom: 8,
   },
-  slotRowActive: { borderColor: Colors.primary, backgroundColor: colors.subtleBg },
+  slotRowActive: { borderColor: Colors.primary, backgroundColor: '#FFF7F2' },
   slotLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   slotEmoji: { fontSize: 22 },
-  slotTitle: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
+  slotTitle: { fontSize: 14, fontWeight: '700', color: '#1A1A1A' },
   slotTitleActive: { color: Colors.primary },
   slotDesc: { fontSize: 12, marginTop: 2 },
   slotRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   surchargeBadge: {
-    backgroundColor: colors.iconBg, paddingHorizontal: 8, paddingVertical: 4,
-    borderRadius: 10, borderWidth: 1, borderColor: colors.iconBorder,
+    backgroundColor: '#FFF0E6', paddingHorizontal: 8, paddingVertical: 4,
+    borderRadius: 10, borderWidth: 1, borderColor: '#FFD6B3',
   },
   surchargeText: { fontSize: 11, fontWeight: '700', color: '#FF6B00' },
   freeBadge: {
-    backgroundColor: colors.surfaceElevated, paddingHorizontal: 8, paddingVertical: 4,
+    backgroundColor: '#F0FDF4', paddingHorizontal: 8, paddingVertical: 4,
     borderRadius: 10, borderWidth: 1, borderColor: '#BBF7D0',
   },
-  freeText: { fontSize: 11, fontWeight: '700', color: Colors.success },
+  freeText: { fontSize: 11, fontWeight: '700', color: '#16A34A' },
   slotCheck: {
     width: 22, height: 22, borderRadius: 11,
     backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center',
@@ -879,25 +733,25 @@ const makeStyles = (colors: any) => StyleSheet.create({
   inputRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 4 },
   inputIconWrap: {
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: colors.iconBg, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#FFF0E6', justifyContent: 'center', alignItems: 'center',
     marginTop: 6,
   },
   inputField: { fontSize: 15, paddingVertical: 10, paddingHorizontal: 4, minHeight: 44 },
-  inputDivider: { height: 1, backgroundColor: colors.cardBorder, marginVertical: 6 },
+  inputDivider: { height: 1, backgroundColor: '#FFE8D6', marginVertical: 6 },
   inputError: { borderBottomWidth: 1, borderBottomColor: '#EF4444' },
-  errorText: { fontSize: 12, color: Colors.danger, marginTop: 2, marginLeft: 4 },
+  errorText: { fontSize: 12, color: '#EF4444', marginTop: 2, marginLeft: 4 },
 
   sizeRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    padding: 14, borderRadius: 18, borderWidth: 1.5, borderColor: colors.cardBorder,
-    backgroundColor: colors.inputBackground, marginBottom: 8,
+    padding: 14, borderRadius: 18, borderWidth: 1.5, borderColor: '#FFE8D6',
+    backgroundColor: '#FAFAFA', marginBottom: 8,
   },
-  sizeRowActive: { borderColor: Colors.primary, backgroundColor: colors.subtleBg },
+  sizeRowActive: { borderColor: Colors.primary, backgroundColor: '#FFF7F2' },
   sizeEmoji: { fontSize: 24 },
-  sizeName: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
+  sizeName: { fontSize: 14, fontWeight: '700', color: '#1A1A1A' },
   sizeNameActive: { color: Colors.primary },
   sizeDesc: { fontSize: 12, marginTop: 2 },
-  sizePrice: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
+  sizePrice: { fontSize: 16, fontWeight: '800', color: '#1A1A1A' },
   sizePriceActive: { color: Colors.primary },
   checkCircle: {
     width: 22, height: 22, borderRadius: 11,
@@ -907,36 +761,36 @@ const makeStyles = (colors: any) => StyleSheet.create({
   categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 4 },
   catCard: {
     minWidth: '29%', flex: 1, alignItems: 'center', gap: 4,
-    backgroundColor: colors.inputBackground, borderRadius: 16, padding: 12,
-    borderWidth: 1.5, borderColor: colors.cardBorder,
+    backgroundColor: '#FAFAFA', borderRadius: 16, padding: 12,
+    borderWidth: 1.5, borderColor: '#FFE8D6',
   },
-  catCardActive: { borderColor: Colors.primary, backgroundColor: colors.subtleBg },
+  catCardActive: { borderColor: Colors.primary, backgroundColor: '#FFF7F2' },
   catEmoji: { fontSize: 22 },
-  catName: { fontSize: 11, fontWeight: '700', color: colors.textSecondary, textAlign: 'center' },
+  catName: { fontSize: 11, fontWeight: '700', color: '#6B7280', textAlign: 'center' },
   catNameActive: { color: Colors.primary },
 
   infoBanner: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 10,
-    padding: 14, borderRadius: 20, backgroundColor: colors.iconBg,
-    borderWidth: 1, borderColor: colors.iconBorder,
+    padding: 14, borderRadius: 20, backgroundColor: '#FFF0E6',
+    borderWidth: 1, borderColor: '#FFD6B3',
   },
-  infoBannerText: { flex: 1, fontSize: 13, lineHeight: 19, color: '#F59E0B' },
+  infoBannerText: { flex: 1, fontSize: 13, lineHeight: 19, color: '#7C4A00' },
 
   ctaBtn: { width: '100%', marginTop: 4 },
   contactPickerBtn: {
     width: 40, height: 40, borderRadius: 12,
-    backgroundColor: colors.iconBg, justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: colors.iconBorder,
+    backgroundColor: '#FFF0E6', justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: '#FFD6B3',
   },
 
   summaryCard: {
-    backgroundColor: colors.surface, borderRadius: 24, padding: 18,
-    borderWidth: 1, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18,
+    borderWidth: 1, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.07, shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 }, elevation: 4, gap: 8,
   },
   summaryLocationRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  summaryLineDivider: { height: 1, backgroundColor: colors.cardBorder, marginLeft: 22, marginVertical: 4 },
+  summaryLineDivider: { height: 1, backgroundColor: '#FFE8D6', marginLeft: 22, marginVertical: 4 },
   summaryLocationText: { flex: 1, fontSize: 14, fontWeight: '600' },
   summaryRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   summaryEmoji: { fontSize: 28 },
@@ -951,8 +805,8 @@ const makeStyles = (colors: any) => StyleSheet.create({
   summaryItemValue: { fontSize: 13, fontWeight: '600' },
 
   fareCard: {
-    backgroundColor: colors.surface, borderRadius: 24, padding: 18,
-    borderWidth: 1, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18,
+    borderWidth: 1, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.07, shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 }, elevation: 4,
   },
@@ -963,77 +817,8 @@ const makeStyles = (colors: any) => StyleSheet.create({
   fareLabel: { fontSize: 13 },
   fareValue: { fontSize: 13, fontWeight: '600' },
   fareTotalRow: {
-    borderTopWidth: 1, borderTopColor: colors.cardBorder, marginTop: 4, paddingTop: 12,
+    borderTopWidth: 1, borderTopColor: '#FFE8D6', marginTop: 4, paddingTop: 12,
   },
-  fareTotalLabel: { fontSize: 15, fontWeight: '800', color: colors.textPrimary },
+  fareTotalLabel: { fontSize: 15, fontWeight: '800', color: '#1A1A1A' },
   fareTotalValue: { fontSize: 20, fontWeight: '800', color: Colors.primary },
-
-  // ── Contact picker modal ──────────────────────────────────────────────────
-  contactModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  contactModalSheet: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-    maxHeight: '75%',
-  },
-  contactModalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  contactModalTitle: { fontSize: 17, fontWeight: '800' },
-  contactModalCloseBtn: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: colors.inputBackground,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  contactSearchRow: {
-    backgroundColor: colors.inputBackground,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    marginBottom: 10,
-  },
-  contactSearchInput: {
-    fontSize: 14,
-    paddingVertical: 10,
-  },
-  contactLoadingWrap: {
-    paddingVertical: 32,
-    alignItems: 'center',
-    gap: 8,
-  },
-  contactLoadingText: { fontSize: 13, color: colors.placeholder },
-  contactEmptyWrap: {
-    paddingVertical: 28,
-    alignItems: 'center',
-    gap: 6,
-  },
-  contactEmptyTitle: { fontSize: 14, fontWeight: '700', color: colors.textSecondary, marginTop: 4 },
-  contactEmptyText: { fontSize: 12, color: colors.placeholder, textAlign: 'center', paddingHorizontal: 20, lineHeight: 17 },
-  contactRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.inputBackground,
-  },
-  contactAvatar: {
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: colors.iconBg,
-    justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: colors.iconBorder,
-  },
-  contactAvatarText: { fontSize: 15, fontWeight: '800', color: Colors.primary },
-  contactRowName: { fontSize: 14, fontWeight: '700' },
-  contactRowPhone: { fontSize: 12, color: colors.placeholder, marginTop: 1 },
-})
-;
+});

@@ -14,11 +14,9 @@ import { router } from 'expo-router';
 import { ArrowLeft, Clock, Check, Package2 } from 'lucide-react-native';
 import { Colors } from '../../theme/colors';
 import { useTheme } from '../../theme/ThemeContext';
-import { useLanguage } from '../../theme/LanguageContext';
 import { Button } from '../../components/common/Button';
 import { useBookingStore } from '../../store/bookingStore';
 import { MINI_TRUCK_VEHICLE_OPTIONS, HELPER_PRICE_PER_PERSON } from '../../constants/mockData';
-import HOME_BG from '../../assets/bg/homeBg';
 
 const VEHICLE_IMAGES: Record<string, ImageSourcePropType> = {
   mini_truck: require('../../assets/images/icon-mini-truck.png'),
@@ -26,9 +24,7 @@ const VEHICLE_IMAGES: Record<string, ImageSourcePropType> = {
 };
 
 export default function MoversMiniTruckVehicleScreen() {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
-  const { t } = useLanguage();
+  const { colors } = useTheme();
   const { movingItemCount, helperCount, setSelectedVehicle, setEstimatedFare } = useBookingStore();
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -50,11 +46,11 @@ export default function MoversMiniTruckVehicleScreen() {
 
   return (
     <ImageBackground
-      source={HOME_BG}
+      source={require('../../assets/images/home-bg.png')}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <SafeAreaView style={styles.safe}>
         {/* ── Hero Header ── */}
         <View style={styles.heroHeader}>
           <View style={styles.heroTopRow}>
@@ -62,7 +58,7 @@ export default function MoversMiniTruckVehicleScreen() {
               <ArrowLeft size={20} color="#FF6B00" />
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
-              <Text style={styles.heroTitle}>{t('chooseVehicle')}</Text>
+              <Text style={styles.heroTitle}>Choose Your Vehicle</Text>
               <Text style={styles.heroSubtitle}>Priced for your {movingItemCount} item{movingItemCount === 1 ? '' : 's'}</Text>
             </View>
           </View>
@@ -137,25 +133,25 @@ export default function MoversMiniTruckVehicleScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  backgroundImage: { flex: 1, width: '100%', height: '100%' },
+  backgroundImage: { flex: 1 },
   heroHeader: {
     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 28,
     borderBottomLeftRadius: 36, borderBottomRightRadius: 36,
-    overflow: 'hidden', backgroundColor: colors.surfaceElevated, marginBottom: 16,
+    overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.18)', marginBottom: 16,
   },
   heroTopRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 16 },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: colors.iconBorder, justifyContent: 'center', alignItems: 'center',
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF',
+    borderWidth: 1, borderColor: '#FFD6B3', justifyContent: 'center', alignItems: 'center',
   },
   heroTitle: { fontSize: 24, fontWeight: '800', color: '#FF6B00', letterSpacing: -0.5 },
-  heroSubtitle: { fontSize: 12, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
+  heroSubtitle: { fontSize: 12, color: '#666', fontWeight: '500', marginTop: 2 },
   chipsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   chip: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: colors.surface, paddingHorizontal: 12, paddingVertical: 6,
+    backgroundColor: '#FFFFFF', paddingHorizontal: 12, paddingVertical: 6,
     borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
   },
   chipText: { fontSize: 11, fontWeight: '600', color: '#FF6B00' },
@@ -164,29 +160,28 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
   vehicleCard: {
     flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 24, padding: 16,
-    backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.07, shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 }, elevation: 4,
   },
-  vehicleCardActive: { borderColor: Colors.primary, borderWidth: 2, backgroundColor: colors.subtleBg },
+  vehicleCardActive: { borderColor: Colors.primary, borderWidth: 2, backgroundColor: '#FFF7F2' },
   vehicleImage: { width: 72, height: 72, resizeMode: 'contain' },
   vehicleInfo: { flex: 1, gap: 3 },
   vehicleName: { fontSize: 16, fontWeight: '700' },
   vehicleDesc: { fontSize: 12 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4, flexWrap: 'wrap' },
   capacityBadge: {
-    backgroundColor: colors.iconBg, paddingHorizontal: 8, paddingVertical: 2,
+    backgroundColor: '#FFF0E6', paddingHorizontal: 8, paddingVertical: 2,
     borderRadius: 10, marginRight: 6,
   },
   capacityBadgeText: { fontSize: 10, fontWeight: '700', color: Colors.primary },
   etaText: { fontSize: 12, fontWeight: '600', color: Colors.primary },
   fareArea: { alignItems: 'flex-end', gap: 8 },
-  fareText: { fontSize: 20, fontWeight: '800', color: colors.textPrimary },
+  fareText: { fontSize: 20, fontWeight: '800', color: '#1A1A1A' },
   fareTextActive: { color: Colors.primary },
   checkCircle: {
     width: 24, height: 24, borderRadius: 12,
     backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center',
   },
   footer: { paddingTop: 4, paddingBottom: 32, gap: 14 },
-})
-;
+});

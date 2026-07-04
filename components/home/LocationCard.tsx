@@ -26,7 +26,6 @@ interface LocationCardProps {
 
 export function LocationCard({ onSelect, onAddNew }: LocationCardProps) {
   const { colors } = useTheme();
-  const styles = makeStyles(colors);
   const { addresses } = useSavedAddressStore();
 
   if (addresses.length === 0) return null;
@@ -105,10 +104,10 @@ export function LocationCard({ onSelect, onAddNew }: LocationCardProps) {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   card: {
     marginHorizontal: Layout.screenPadding,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderRadius: 28,
     overflow: 'hidden',
     shadowColor: '#FF6B00',
@@ -117,7 +116,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 6,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: '#FFE8D6',
   },
   cardHeader: {
     overflow: 'hidden',
@@ -168,16 +167,16 @@ const makeStyles = (colors: any) => StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: '#1A1A1A',
   },
   address: {
     fontSize: 12,
-    color: colors.placeholder,
+    color: '#6B7280',
     lineHeight: 16,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
     marginLeft: 50,
   },
   addRow: {
@@ -191,11 +190,11 @@ const makeStyles = (colors: any) => StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: colors.iconBorder,
+    borderColor: '#FFD6B3',
     borderStyle: 'dashed',
   },
   addLabel: {
@@ -207,7 +206,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
     justifyContent: 'center',
     alignItems: 'center',
   },

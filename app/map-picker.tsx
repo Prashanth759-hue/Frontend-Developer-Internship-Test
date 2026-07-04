@@ -37,10 +37,9 @@ import {
 } from 'lucide-react-native';
 import { Colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
-import { useLanguage } from '../theme/LanguageContext';
 import { useMapPickerStore } from '../store/mapPickerStore';
 import { useLocation } from '../hooks/useLocation';
-import { TurnOnLocationModal } from '../components/common/TurnOnLocationModal';
+import { LocationDeniedFallback } from '../components/common/LocationDeniedFallback';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -81,25 +80,22 @@ const MAP_ROWS = 14;
 const MAP_COLS = 8;
 
 export default function MapPickerScreen() {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
-  const { t } = useLanguage();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ fieldKey: string; currentValue?: string }>();
   const { setResult } = useMapPickerStore();
   const {
+    permissionStatus,
     locationLabel,
     loading: locationLoading,
-    needsRationale,
-    confirmRationale,
-    dismissRationale,
-    requestWithRationale,
-  } = useLocation(false); // don't auto-request here — home already handled this on entry
+    refresh: refreshLocation,
+  } = useLocation(false); // don't auto-request here — home/onboarding already handled the rationale
 
   const [query, setQuery] = useState(params.currentValue ?? '');
   const [pinLabel, setPinLabel] = useState(params.currentValue ?? 'Move pin to set location');
   const [searchFocused, setSearchFocused] = useState(false);
   const [pinMoved, setPinMoved] = useState(false);
+  const [showPermissionGuidance, setShowPermissionGuidance] = useState(false);
 
   const suggestions = getSuggestions(query);
 
@@ -126,10 +122,15 @@ export default function MapPickerScreen() {
     setPinMoved(true);
   };
 
-  // Shows the "Turn on Location" popup first if device location is off or
-  // permission isn't granted; otherwise fetches current location directly.
+  // UX-LOC-010: "Use current location" must reflect the real permission
+  // state. If it's denied/unavailable, surface clear guidance instead of
+  // silently failing or faking a result.
   const handleUseCurrentLocation = async () => {
-    await requestWithRationale();
+    if (permissionStatus === 'denied' || permissionStatus === 'unavailable') {
+      setShowPermissionGuidance(true);
+      return;
+    }
+    await refreshLocation();
   };
 
   // Once a real GPS label resolves, drop it into the pin/query fields.
@@ -141,15 +142,15 @@ export default function MapPickerScreen() {
     }
   }, [locationLabel]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (permissionStatus === 'denied' || permissionStatus === 'unavailable') {
+      setShowPermissionGuidance(true);
+    }
+  }, [permissionStatus]);
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" />
-
-      <TurnOnLocationModal
-        visible={needsRationale}
-        onAllow={confirmRationale}
-        onDeny={dismissRationale}
-      />
 
       {/* ── Full-screen map placeholder ────────────────────────────────────── */}
       <TouchableOpacity
@@ -222,7 +223,7 @@ export default function MapPickerScreen() {
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={{ marginRight: 8 }}
             >
-              <Text style={{ fontSize: 12, color: colors.placeholder, fontWeight: '700' }}>✕</Text>
+              <Text style={{ fontSize: 12, color: '#9CA3AF', fontWeight: '700' }}>✕</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -252,29 +253,43 @@ export default function MapPickerScreen() {
 
       {/* ── Bottom confirmation panel ───────────────────────────────────────── */}
       <View style={[styles.bottomPanel, { paddingBottom: insets.bottom + 16 }]}>
-        {/* Current location shortcut */}
-        <TouchableOpacity
-          style={styles.currentLocBtn}
-          onPress={handleUseCurrentLocation}
-          disabled={locationLoading}
-          accessibilityLabel="Use current location"
-        >
-          <Navigation size={16} color={Colors.primary} />
-          <Text style={styles.currentLocText}>
-            {locationLoading ? 'Detecting your location…' : 'Use current location'}
-          </Text>
-        </TouchableOpacity>
+        {/* ── Permission-disabled guidance (UX-LOC-010) ── */}
+        {showPermissionGuidance && (
+          <LocationDeniedFallback
+            compact
+            title="Location is off"
+            message="Enable location in Settings to use your current position, or search and drop the pin manually above."
+            onEnterManually={() => setShowPermissionGuidance(false)}
+          />
+        )}
 
-        {/* Address pill */}
-        <View style={styles.addressPill}>
-          <View style={styles.addressPinDot} />
-          <Text
-            style={[styles.addressText, { color: pinMoved ? colors.textPrimary : colors.placeholder }]}
-            numberOfLines={2}
-          >
-            {pinLabel}
-          </Text>
-        </View>
+        {!showPermissionGuidance && (
+          <>
+            {/* Current location shortcut */}
+            <TouchableOpacity
+              style={styles.currentLocBtn}
+              onPress={handleUseCurrentLocation}
+              disabled={locationLoading}
+              accessibilityLabel="Use current location"
+            >
+              <Navigation size={16} color={Colors.primary} />
+              <Text style={styles.currentLocText}>
+                {locationLoading ? 'Detecting your location…' : 'Use current location'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Address pill */}
+            <View style={styles.addressPill}>
+              <View style={styles.addressPinDot} />
+              <Text
+                style={[styles.addressText, { color: pinMoved ? '#1A1A1A' : '#9CA3AF' }]}
+                numberOfLines={2}
+              >
+                {pinLabel}
+              </Text>
+            </View>
+          </>
+        )}
 
         {/* Confirm button */}
         <TouchableOpacity
@@ -284,14 +299,14 @@ export default function MapPickerScreen() {
           activeOpacity={0.85}
         >
           <Check size={18} color="#FFFFFF" />
-          <Text style={styles.confirmText}>{t('confirm')}</Text>
+          <Text style={styles.confirmText}>Confirm Location</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#E8F0E9',
@@ -316,7 +331,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     backgroundColor: '#E0EBE1',
   },
   mapCellRoad: {
-    backgroundColor: colors.inputBackground,
+    backgroundColor: '#F5F5F5',
   },
   mapCellBlock: {
     backgroundColor: '#D8E8D9',
@@ -326,7 +341,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     left: 0,
     right: 0,
     height: 10,
-    backgroundColor: colors.inputBackground,
+    backgroundColor: '#FAFAFA',
     borderTopWidth: 1,
     borderBottomWidth: 1,
     borderColor: 'rgba(200,200,200,0.4)',
@@ -336,7 +351,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 10,
-    backgroundColor: colors.inputBackground,
+    backgroundColor: '#FAFAFA',
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderColor: 'rgba(200,200,200,0.4)',
@@ -352,15 +367,15 @@ const makeStyles = (colors: any) => StyleSheet.create({
   mapLabelText: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.textSecondary,
-    backgroundColor: colors.surfaceElevated,
+    color: 'rgba(80,100,80,0.7)',
+    backgroundColor: 'rgba(255,255,255,0.7)',
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 20,
   },
   mapLabelSub: {
     fontSize: 11,
-    color: colors.placeholder,
+    color: 'rgba(80,100,80,0.5)',
   },
 
   // ── Pin ───────────────────────────────────────────────────────────────────
@@ -378,7 +393,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: colors.textPrimary,
+    shadowColor: '#000',
     shadowOpacity: 0.3,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
@@ -416,10 +431,10 @@ const makeStyles = (colors: any) => StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: colors.textPrimary,
+    shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
@@ -430,11 +445,11 @@ const makeStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderRadius: 14,
     paddingVertical: Platform.OS === 'ios' ? 10 : 4,
     paddingHorizontal: 12,
-    shadowColor: colors.textPrimary,
+    shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
@@ -452,10 +467,10 @@ const makeStyles = (colors: any) => StyleSheet.create({
     position: 'absolute',
     left: 16,
     right: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     overflow: 'hidden',
-    shadowColor: colors.textPrimary,
+    shadowColor: '#000',
     shadowOpacity: 0.15,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 6 },
@@ -471,18 +486,18 @@ const makeStyles = (colors: any) => StyleSheet.create({
   },
   suggRowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.inputBackground,
+    borderBottomColor: '#F5F5F5',
   },
   suggIcon: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.inputBackground,
+    backgroundColor: '#F5F5F5',
     justifyContent: 'center',
     alignItems: 'center',
   },
   suggName: { fontSize: 14, fontWeight: '600' },
-  suggCity: { fontSize: 11, color: colors.placeholder, marginTop: 1 },
+  suggCity: { fontSize: 11, color: '#9CA3AF', marginTop: 1 },
 
   // ── Bottom panel ──────────────────────────────────────────────────────────
   bottomPanel: {
@@ -490,13 +505,13 @@ const makeStyles = (colors: any) => StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingTop: 16,
     paddingHorizontal: 20,
     gap: 12,
-    shadowColor: colors.textPrimary,
+    shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: -4 },
@@ -517,11 +532,11 @@ const makeStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: colors.inputBackground,
+    backgroundColor: '#F5F5F5',
     borderRadius: 14,
     padding: 12,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: '#FFE8D6',
   },
   addressPinDot: {
     width: 10,
@@ -551,15 +566,14 @@ const makeStyles = (colors: any) => StyleSheet.create({
     elevation: 6,
   },
   confirmBtnDisabled: {
-    backgroundColor: colors.border,
+    backgroundColor: '#E5E7EB',
     shadowOpacity: 0,
     elevation: 0,
   },
   confirmText: {
     fontSize: 16,
     fontWeight: '800',
-    color: colors.surface,
+    color: '#FFFFFF',
     letterSpacing: 0.3,
   },
-})
-;
+});

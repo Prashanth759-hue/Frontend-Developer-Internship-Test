@@ -11,28 +11,29 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { router } from 'expo-router';
-import { ArrowLeft, MapPin, Circle, Plus, X, Package, User, Phone, Weight, MessageSquare, ArrowUpDown, AlertCircle, Check } from 'lucide-react-native';
+import { ArrowLeft, MapPin, Circle, Plus, X, Package, User, Phone, Weight, MessageSquare, ArrowUpDown } from 'lucide-react-native';
 import { Colors } from '../../theme/colors';
 import { useTheme } from '../../theme/ThemeContext';
-import { useLanguage } from '../../theme/LanguageContext';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { AddressText } from '../../components/common/AddressText';
 import { useBookingStore } from '../../store/bookingStore';
 import { useMapPickerStore } from '../../store/mapPickerStore';
-import { useSenderReceiver } from '../../hooks/useSenderReceiver';
 import LocationSearchInput from '../../components/booking/LocationSearchInput';
 import {
+  validateName,
+  validatePhone,
+  validateAddress,
+  validateDescription,
   validateWeight,
+  sanitizePhone,
+  sanitizeName,
 } from '../../utils/validators';
-import HOME_BG from '../../assets/bg/homeBg';
 
 const FLOOR_OPTIONS = ['Ground Floor', '1st–3rd (Lift)', '1st–3rd (No Lift)', '4th+ (No Lift)'];
 
 export default function PickupScreen() {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
-  const { t } = useLanguage();
+  const { colors } = useTheme();
   const { pickup, drop, stops, serviceType, tripMode, moversFlow, setPickup, setDrop, addStop, removeStop, setGoodsDetails } = useBookingStore();
   const { result: mapResult, clearResult } = useMapPickerStore();
   const [pickupText, setPickupText] = useState(pickup?.address ?? '');
@@ -50,23 +51,37 @@ export default function PickupScreen() {
   );
   const [stopTexts, setStopTexts] = useState<string[]>(stops.map((s) => s.address));
 
+  const [receiverName, setReceiverName] = useState('');
+  const [receiverPhone, setReceiverPhone] = useState('');
   const [parcelWeight, setParcelWeight] = useState('');
   const [parcelDesc, setParcelDesc] = useState('');
   const [selectedFloor, setSelectedFloor] = useState('');
   const [notes, setNotes] = useState('');
-
-  // Sender auto-filled from profile + Receiver "Use my details" toggle
-  // (Parcel section on this shared screen only — flow/fields for other
-  // service types on this page are unchanged.)
-  const parcelSR = useSenderReceiver();
+  // Errors — parcel
+  const [receiverNameError, setReceiverNameError] = useState('');
+  const [receiverPhoneError, setReceiverPhoneError] = useState('');
 
   // Packers & Movers (Between Cities)
   const [moversGoodsCategory, setMoversGoodsCategory] = useState('');
   const [moversGoodsWeight, setMoversGoodsWeight] = useState('');
   const [moversGoodsDesc, setMoversGoodsDesc] = useState('');
   const [moversWeightError, setMoversWeightError] = useState('');
-  const [moversGoodsCategoryError, setMoversGoodsCategoryError] = useState('');
-  const [formError, setFormError] = useState('');
+
+  // Heavy cargo (Truck)
+  const [cargoSenderName, setCargoSenderName] = useState('');
+  const [cargoSenderPhone, setCargoSenderPhone] = useState('');
+  const [cargoReceiverName, setCargoReceiverName] = useState('');
+  const [cargoReceiverPhone, setCargoReceiverPhone] = useState('');
+  const [cargoCategory, setCargoCategory] = useState('');
+  const [cargoWeight, setCargoWeight] = useState('');
+  const [cargoDesc, setCargoDesc] = useState('');
+
+  // Errors — cargo
+  const [cargoSenderNameError, setCargoSenderNameError] = useState('');
+  const [cargoSenderPhoneError, setCargoSenderPhoneError] = useState('');
+  const [cargoReceiverNameError, setCargoReceiverNameError] = useState('');
+  const [cargoReceiverPhoneError, setCargoReceiverPhoneError] = useState('');
+  const [cargoWeightError, setCargoWeightError] = useState('');
 
   const isParcelLike = serviceType === 'parcel' || serviceType === 'courier';
   const isHeavyCargo = serviceType === 'heavy_cargo';
@@ -74,20 +89,16 @@ export default function PickupScreen() {
   const isMoversBetweenCities = isPackersMovers && moversFlow === 'between_cities';
   const isMoversMiniTruck = isPackersMovers && moversFlow === 'mini_truck';
   const isMoversWithinCity = isPackersMovers && (moversFlow === 'within_city' || !moversFlow);
-  // Within-city and between-cities now share the exact same flow: pickup/drop
-  // here, then a dedicated "Add Items" screen — no floor/goods fields on this page.
-  const isMoversStandard = isMoversWithinCity || isMoversBetweenCities;
-  const showFloorSection = false;
+  const showFloorSection = isPackersMovers && !isMoversBetweenCities;
   const needsReceiver = isParcelLike;
   const showAddStop = !isParcelLike && !isHeavyCargo && !isPackersMovers;
-  // Every flow now collects locations on this screen, including Packers & Movers.
-  const showLocationSection = true;
+  const showLocationSection = !(isHeavyCargo && tripMode !== 'within_city') && !isMoversBetweenCities;
 
   const heroTitle = isParcelLike
     ? 'Delivery Details'
     : isHeavyCargo
-    ? 'Set Locations'
-    : isMoversMiniTruck
+    ? 'Goods Details'
+    : isMoversBetweenCities
     ? 'Goods Details'
     : isPackersMovers
     ? 'Move Details'
@@ -96,8 +107,10 @@ export default function PickupScreen() {
   const heroSubtitle = isParcelLike
     ? 'Fill pickup, drop & parcel info'
     : isHeavyCargo
-    ? 'Enter pickup and drop locations'
-    : isMoversMiniTruck
+    ? showLocationSection
+      ? 'Fill pickup, drop & goods info'
+      : 'Sender, receiver & goods info'
+    : isMoversBetweenCities
     ? "Tell us what you're moving"
     : isPackersMovers
     ? 'Tell us about your move'
@@ -112,13 +125,15 @@ export default function PickupScreen() {
     : '🏍️ Fast pickup';
 
   const continueLabel = isParcelLike
-    ? 'Continue · Choose Vehicle'
+    ? 'Find Delivery Partner'
     : isHeavyCargo
-    ? 'Continue · Goods Details'
-    : isMoversMiniTruck
-    ? 'Continue · Schedule Pickup'
-    : isMoversStandard
-    ? 'Continue · Add Items'
+    ? tripMode === 'within_city'
+      ? 'Continue · Choose Truck'
+      : 'Continue'
+    : isMoversBetweenCities
+    ? 'Find Moving Partner'
+    : isMoversWithinCity || isMoversMiniTruck
+    ? 'Continue · Choose Vehicle'
     : isPackersMovers
     ? 'Find Moving Partner'
     : 'Continue';
@@ -141,9 +156,49 @@ export default function PickupScreen() {
     setDropText(pickupText);
   };
 
-  const handleCargoReceiverNameChange = (text: string) => {};
-  const handleCargoReceiverPhoneChange = (text: string) => {};
-  const handleCargoWeightChange = (text: string) => {};
+  // ── Name handlers ─────────────────────────────────────────────────────────
+  const handleReceiverNameChange = (text: string) => {
+    const cleaned = sanitizeName(text);
+    setReceiverName(cleaned);
+    if (receiverNameError) setReceiverNameError('');
+  };
+
+  const handleCargoSenderNameChange = (text: string) => {
+    const cleaned = sanitizeName(text);
+    setCargoSenderName(cleaned);
+    if (cargoSenderNameError) setCargoSenderNameError('');
+  };
+
+  const handleCargoReceiverNameChange = (text: string) => {
+    const cleaned = sanitizeName(text);
+    setCargoReceiverName(cleaned);
+    if (cargoReceiverNameError) setCargoReceiverNameError('');
+  };
+
+  // ── Phone handlers ────────────────────────────────────────────────────────
+  const handleReceiverPhoneChange = (text: string) => {
+    const digits = sanitizePhone(text);
+    setReceiverPhone(digits);
+    if (receiverPhoneError) setReceiverPhoneError('');
+  };
+
+  const handleCargoSenderPhoneChange = (text: string) => {
+    const digits = sanitizePhone(text);
+    setCargoSenderPhone(digits);
+    if (cargoSenderPhoneError) setCargoSenderPhoneError('');
+  };
+
+  const handleCargoReceiverPhoneChange = (text: string) => {
+    const digits = sanitizePhone(text);
+    setCargoReceiverPhone(digits);
+    if (cargoReceiverPhoneError) setCargoReceiverPhoneError('');
+  };
+
+  // ── Weight handlers ───────────────────────────────────────────────────────
+  const handleCargoWeightChange = (text: string) => {
+    setCargoWeight(text.slice(0, 30));
+    if (cargoWeightError) setCargoWeightError('');
+  };
 
   const handleMoversWeightChange = (text: string) => {
     setMoversGoodsWeight(text.slice(0, 30));
@@ -153,41 +208,56 @@ export default function PickupScreen() {
   // ── Validation on continue ────────────────────────────────────────────────
   const validateAndContinue = (): boolean => {
     let hasError = false;
-    setFormError('');
-
-    if (showLocationSection && (pickupText.trim().length <= 2 || dropText.trim().length <= 2)) {
-      setFormError('Please enter both pickup and drop locations.');
-      hasError = true;
-    }
 
     if (isParcelLike) {
-      if (!parcelSR.validateSenderReceiver()) hasError = true;
+      const nameRes = validateName(receiverName);
+      if (!nameRes.valid) { setReceiverNameError(nameRes.error ?? 'Invalid name'); hasError = true; }
+      const phoneRes = validatePhone(receiverPhone);
+      if (!phoneRes.valid) { setReceiverPhoneError(phoneRes.error ?? 'Invalid phone'); hasError = true; }
     }
 
-    if (isMoversMiniTruck) {
+    if (isHeavyCargo) {
+      const snRes = validateName(cargoSenderName);
+      if (!snRes.valid) { setCargoSenderNameError(snRes.error ?? 'Invalid name'); hasError = true; }
+      const spRes = validatePhone(cargoSenderPhone);
+      if (!spRes.valid) { setCargoSenderPhoneError(spRes.error ?? 'Invalid phone'); hasError = true; }
+      const rnRes = validateName(cargoReceiverName);
+      if (!rnRes.valid) { setCargoReceiverNameError(rnRes.error ?? 'Invalid name'); hasError = true; }
+      const rpRes = validatePhone(cargoReceiverPhone);
+      if (!rpRes.valid) { setCargoReceiverPhoneError(rpRes.error ?? 'Invalid phone'); hasError = true; }
+      const wRes = validateWeight(cargoWeight);
+      if (!wRes.valid) { setCargoWeightError(wRes.error ?? 'Invalid weight'); hasError = true; }
+      if (!cargoCategory) { hasError = true; }
+    }
+
+    if (isMoversBetweenCities) {
       const wRes = validateWeight(moversGoodsWeight);
       if (!wRes.valid) { setMoversWeightError(wRes.error ?? 'Invalid weight'); hasError = true; }
-      if (!moversGoodsCategory) {
-        setMoversGoodsCategoryError('Please select a goods category.');
-        hasError = true;
-      } else if (moversGoodsCategoryError) {
-        setMoversGoodsCategoryError('');
-      }
+      if (!moversGoodsCategory) { hasError = true; }
     }
 
     return !hasError;
   };
 
+  const heavyCargoValid =
+    validateName(cargoSenderName).valid &&
+    validatePhone(cargoSenderPhone).valid &&
+    validateName(cargoReceiverName).valid &&
+    validatePhone(cargoReceiverPhone).valid &&
+    cargoCategory.trim().length > 0 &&
+    validateWeight(cargoWeight).valid;
+
   const moversGoodsValid =
     moversGoodsCategory.trim().length > 0 && validateWeight(moversGoodsWeight).valid;
 
   const canContinue = isHeavyCargo
-    ? pickupText.trim().length > 2 && dropText.trim().length > 2
-    : isMoversMiniTruck
-    ? pickupText.trim().length > 2 && dropText.trim().length > 2 && moversGoodsValid
+    ? (!showLocationSection || (pickupText.trim().length > 2 && dropText.trim().length > 2)) &&
+      heavyCargoValid
+    : isMoversBetweenCities
+    ? moversGoodsValid
     : pickupText.trim().length > 2 &&
       dropText.trim().length > 2 &&
-      (!needsReceiver || (parcelSR.isSenderValid && parcelSR.isReceiverValid));
+      (!needsReceiver || (validateName(receiverName).valid && validatePhone(receiverPhone).valid));
 
   const handleContinue = () => {
     if (!validateAndContinue()) return;
@@ -197,8 +267,21 @@ export default function PickupScreen() {
       setDrop({ label: 'Drop', address: dropText });
     }
     if (isHeavyCargo) {
-      router.push('/(booking)/goods-details');
-    } else if (isMoversMiniTruck) {
+      setGoodsDetails({
+        senderName: cargoSenderName,
+        senderPhone: cargoSenderPhone,
+        receiverName: cargoReceiverName,
+        receiverPhone: cargoReceiverPhone,
+        category: cargoCategory,
+        weight: cargoWeight,
+        description: cargoDesc,
+      });
+      if (tripMode === 'within_city') {
+        router.push('/(booking)/truck-vehicle');
+      } else {
+        router.push('/(booking)/schedule');
+      }
+    } else if (isMoversBetweenCities) {
       setGoodsDetails({
         senderName: '',
         senderPhone: '',
@@ -208,22 +291,15 @@ export default function PickupScreen() {
         weight: moversGoodsWeight,
         description: moversGoodsDesc,
       });
-      router.push('/(booking)/movers-schedule');
-    } else if (isMoversStandard) {
-      router.push('/(booking)/movers-items');
+      router.push('/(booking)/fare');
+    } else if (isMoversMiniTruck) {
+      router.push('/(booking)/movers-mini-truck-vehicle');
+    } else if (isMoversWithinCity) {
+      router.push('/(booking)/packers-movers-vehicle');
     } else if (isPackersMovers) {
       router.push('/(booking)/fare');
     } else if (isParcelLike) {
-      setGoodsDetails({
-        senderName: parcelSR.senderName,
-        senderPhone: parcelSR.senderPhone,
-        receiverName: parcelSR.receiverName,
-        receiverPhone: parcelSR.receiverPhone,
-        category: 'Parcel',
-        weight: parcelWeight,
-        description: parcelDesc,
-      });
-      router.push('/(booking)/parcel-vehicle');
+      router.push('/(booking)/fare');
     } else {
       router.push('/(booking)/vehicle');
     }
@@ -231,11 +307,11 @@ export default function PickupScreen() {
 
   return (
     <ImageBackground
-      source={HOME_BG}
+      source={require('../../assets/images/home-bg.png')}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <SafeAreaView style={styles.safe}>
         {/* ── Hero Header ── */}
         <View style={styles.heroHeader}>
           <View style={styles.heroTopRow}>
@@ -272,8 +348,8 @@ export default function PickupScreen() {
             <View style={styles.locationFieldsWrap}>
               <LocationSearchInput
                 value={pickupText}
-                onChangeText={(t) => { setPickupText(t); if (formError) setFormError(''); }}
-                onSelect={(t) => { setPickupText(t); if (formError) setFormError(''); }}
+                onChangeText={setPickupText}
+                onSelect={setPickupText}
                 placeholder="Pickup location"
                 dotType="circle"
                 dotColor={Colors.primary}
@@ -309,8 +385,8 @@ export default function PickupScreen() {
 
               <LocationSearchInput
                 value={dropText}
-                onChangeText={(t) => { setDropText(t); if (formError) setFormError(''); }}
-                onSelect={(t) => { setDropText(t); if (formError) setFormError(''); }}
+                onChangeText={setDropText}
+                onSelect={setDropText}
                 placeholder="Drop location"
                 dotType="pin"
                 dotColor={Colors.danger}
@@ -345,86 +421,51 @@ export default function PickupScreen() {
           )}
 
 
+
+          {/* ── Route summary for truck flows that already collected the route ── */}
+          {isHeavyCargo && !showLocationSection && (
+            <View style={styles.card}>
+              <Text style={styles.cardLabel}>📍 ROUTE</Text>
+              <View style={[styles.locationRow, styles.locationRowWrap]}>
+                <View style={[styles.dotWrap, styles.dotWrapTop]}>
+                  <Circle size={12} color={Colors.primary} fill={Colors.primary} />
+                </View>
+                <AddressText style={[styles.routeSummaryText, { color: colors.textPrimary }]}>
+                  {pickup?.address}
+                </AddressText>
+              </View>
+              <View style={styles.divider} />
+              <View style={[styles.locationRow, styles.locationRowWrap]}>
+                <View style={[styles.dotWrap, styles.dotWrapTop]}>
+                  <MapPin size={14} color={Colors.danger} fill={Colors.danger} />
+                </View>
+                <AddressText style={[styles.routeSummaryText, { color: colors.textPrimary }]}>
+                  {drop?.address}
+                </AddressText>
+              </View>
+            </View>
+          )}
+
           {/* ── Parcel / Courier sections ── */}
           {isParcelLike && (
             <>
               <View style={styles.card}>
-                <Text style={styles.cardLabel}>📤 SENDER DETAILS</Text>
-
-                <View style={styles.logisticsRow}>
-                  <View style={styles.logisticsIconWrap}>
-                    <User size={16} color={Colors.primary} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <TextInput
-                      style={[styles.logisticsInput, { color: colors.textPrimary }, parcelSR.senderNameError ? styles.inputError : null]}
-                      value={parcelSR.senderName}
-                      onChangeText={parcelSR.onSenderNameChange}
-                      placeholder="Sender's name"
-                      placeholderTextColor={colors.placeholder}
-                      maxLength={60}
-                    />
-                    {parcelSR.senderNameError ? <Text style={styles.errorText}>{parcelSR.senderNameError}</Text> : null}
-                  </View>
-                </View>
-
-                <View style={styles.divider} />
-
-                <View style={styles.logisticsRow}>
-                  <View style={styles.logisticsIconWrap}>
-                    <Phone size={16} color={Colors.primary} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <TextInput
-                      style={[styles.logisticsInput, { color: colors.textPrimary }, parcelSR.senderPhoneError ? styles.inputError : null]}
-                      value={parcelSR.senderPhone}
-                      onChangeText={parcelSR.onSenderPhoneChange}
-                      placeholder="Sender's phone number"
-                      placeholderTextColor={colors.placeholder}
-                      keyboardType="phone-pad"
-                      maxLength={10}
-                    />
-                    {parcelSR.senderPhoneError ? <Text style={styles.errorText}>{parcelSR.senderPhoneError}</Text> : null}
-                  </View>
-                </View>
-              </View>
-
-              <View style={styles.card}>
                 <Text style={styles.cardLabel}>👤 RECEIVER DETAILS</Text>
 
-                <TouchableOpacity
-                  style={styles.sameAsSenderRow}
-                  onPress={parcelSR.toggleSameAsSender}
-                  activeOpacity={0.7}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: parcelSR.sameAsSender }}
-                >
-                  <View style={[styles.checkbox, parcelSR.sameAsSender && styles.checkboxActive]}>
-                    {parcelSR.sameAsSender ? <Check size={12} color="#fff" /> : null}
-                  </View>
-                  <Text style={styles.sameAsSenderText}>Use my details (same as sender)</Text>
-                </TouchableOpacity>
-
                 <View style={styles.logisticsRow}>
                   <View style={styles.logisticsIconWrap}>
                     <User size={16} color={Colors.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <TextInput
-                      style={[
-                        styles.logisticsInput,
-                        { color: colors.textPrimary },
-                        parcelSR.receiverNameError ? styles.inputError : null,
-                        parcelSR.sameAsSender ? styles.inputDisabled : null,
-                      ]}
-                      value={parcelSR.receiverName}
-                      onChangeText={parcelSR.onReceiverNameChange}
+                      style={[styles.logisticsInput, { color: colors.textPrimary }, receiverNameError ? styles.inputError : null]}
+                      value={receiverName}
+                      onChangeText={handleReceiverNameChange}
                       placeholder="Receiver's name"
                       placeholderTextColor={colors.placeholder}
                       maxLength={60}
-                      editable={!parcelSR.sameAsSender}
                     />
-                    {parcelSR.receiverNameError ? <Text style={styles.errorText}>{parcelSR.receiverNameError}</Text> : null}
+                    {receiverNameError ? <Text style={styles.errorText}>{receiverNameError}</Text> : null}
                   </View>
                 </View>
 
@@ -436,21 +477,15 @@ export default function PickupScreen() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <TextInput
-                      style={[
-                        styles.logisticsInput,
-                        { color: colors.textPrimary },
-                        parcelSR.receiverPhoneError ? styles.inputError : null,
-                        parcelSR.sameAsSender ? styles.inputDisabled : null,
-                      ]}
-                      value={parcelSR.receiverPhone}
-                      onChangeText={parcelSR.onReceiverPhoneChange}
+                      style={[styles.logisticsInput, { color: colors.textPrimary }, receiverPhoneError ? styles.inputError : null]}
+                      value={receiverPhone}
+                      onChangeText={handleReceiverPhoneChange}
                       placeholder="Receiver's phone number"
                       placeholderTextColor={colors.placeholder}
                       keyboardType="phone-pad"
                       maxLength={10}
-                      editable={!parcelSR.sameAsSender}
                     />
-                    {parcelSR.receiverPhoneError ? <Text style={styles.errorText}>{parcelSR.receiverPhoneError}</Text> : null}
+                    {receiverPhoneError ? <Text style={styles.errorText}>{receiverPhoneError}</Text> : null}
                   </View>
                 </View>
               </View>
@@ -499,10 +534,157 @@ export default function PickupScreen() {
             </>
           )}
 
-          {/* Heavy cargo goods details are collected on the next screen (goods-details.tsx) */}
+          {/* ── Truck / Heavy Cargo section ── */}
+          {isHeavyCargo && (
+            <>
+              <View style={styles.card}>
+                <Text style={styles.cardLabel}>👤 SENDER DETAILS</Text>
 
-          {/* ── Packers & Movers: Goods Details (Mini Truck) ── */}
-          {isMoversMiniTruck && (
+                <View style={styles.logisticsRow}>
+                  <View style={styles.logisticsIconWrap}>
+                    <User size={16} color={Colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <TextInput
+                      style={[styles.logisticsInput, { color: colors.textPrimary }, cargoSenderNameError ? styles.inputError : null]}
+                      value={cargoSenderName}
+                      onChangeText={handleCargoSenderNameChange}
+                      placeholder="Sender's name"
+                      placeholderTextColor={colors.placeholder}
+                      maxLength={60}
+                    />
+                    {cargoSenderNameError ? <Text style={styles.errorText}>{cargoSenderNameError}</Text> : null}
+                  </View>
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.logisticsRow}>
+                  <View style={styles.logisticsIconWrap}>
+                    <Phone size={16} color={Colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <TextInput
+                      style={[styles.logisticsInput, { color: colors.textPrimary }, cargoSenderPhoneError ? styles.inputError : null]}
+                      value={cargoSenderPhone}
+                      onChangeText={handleCargoSenderPhoneChange}
+                      placeholder="Sender's phone number"
+                      placeholderTextColor={colors.placeholder}
+                      keyboardType="phone-pad"
+                      maxLength={10}
+                    />
+                    {cargoSenderPhoneError ? <Text style={styles.errorText}>{cargoSenderPhoneError}</Text> : null}
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.card}>
+                <Text style={styles.cardLabel}>📥 RECEIVER DETAILS</Text>
+
+                <View style={styles.logisticsRow}>
+                  <View style={styles.logisticsIconWrap}>
+                    <User size={16} color={Colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <TextInput
+                      style={[styles.logisticsInput, { color: colors.textPrimary }, cargoReceiverNameError ? styles.inputError : null]}
+                      value={cargoReceiverName}
+                      onChangeText={handleCargoReceiverNameChange}
+                      placeholder="Receiver's name"
+                      placeholderTextColor={colors.placeholder}
+                      maxLength={60}
+                    />
+                    {cargoReceiverNameError ? <Text style={styles.errorText}>{cargoReceiverNameError}</Text> : null}
+                  </View>
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.logisticsRow}>
+                  <View style={styles.logisticsIconWrap}>
+                    <Phone size={16} color={Colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <TextInput
+                      style={[styles.logisticsInput, { color: colors.textPrimary }, cargoReceiverPhoneError ? styles.inputError : null]}
+                      value={cargoReceiverPhone}
+                      onChangeText={handleCargoReceiverPhoneChange}
+                      placeholder="Receiver's phone number"
+                      placeholderTextColor={colors.placeholder}
+                      keyboardType="phone-pad"
+                      maxLength={10}
+                    />
+                    {cargoReceiverPhoneError ? <Text style={styles.errorText}>{cargoReceiverPhoneError}</Text> : null}
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.card}>
+                <Text style={styles.cardLabel}>📦 GOODS DETAILS</Text>
+
+                <View style={styles.weightChips}>
+                  {['Electronics', 'Furniture', 'Machinery', 'Raw Material', 'Other'].map((w) => (
+                    <TouchableOpacity
+                      key={w}
+                      style={[styles.weightChip, cargoCategory === w && styles.weightChipActive]}
+                      onPress={() => setCargoCategory(w)}
+                    >
+                      <Text style={[styles.weightChipText, cargoCategory === w && styles.weightChipTextActive]}>
+                        {w}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.logisticsRow}>
+                  <View style={styles.logisticsIconWrap}>
+                    <Weight size={16} color={Colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <TextInput
+                      style={[styles.logisticsInput, { color: colors.textPrimary }, cargoWeightError ? styles.inputError : null]}
+                      value={cargoWeight}
+                      onChangeText={handleCargoWeightChange}
+                      placeholder="Approx. weight (e.g. 500 kg)"
+                      placeholderTextColor={colors.placeholder}
+                      keyboardType="default"
+                      maxLength={30}
+                    />
+                    {cargoWeightError ? <Text style={styles.errorText}>{cargoWeightError}</Text> : null}
+                  </View>
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.logisticsRow}>
+                  <View style={styles.logisticsIconWrap}>
+                    <MessageSquare size={16} color={Colors.primary} />
+                  </View>
+                  <TextInput
+                    style={[styles.logisticsInput, { color: colors.textPrimary, flex: 1 }]}
+                    value={cargoDesc}
+                    onChangeText={(t) => setCargoDesc(t.slice(0, 300))}
+                    placeholder="Describe your goods (optional)"
+                    placeholderTextColor={colors.placeholder}
+                    multiline
+                    maxLength={300}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.infoBanner}>
+                <Text style={styles.infoEmoji}>🚚</Text>
+                <Text style={styles.infoText}>
+                  Our driver will arrive with the selected truck for doorstep loading & delivery
+                </Text>
+              </View>
+            </>
+          )}
+
+          {/* ── Packers & Movers: Goods Details (Between Cities) ── */}
+          {isMoversBetweenCities && (
             <>
               <View style={styles.card}>
                 <Text style={styles.cardLabel}>📦 GOODS DETAILS</Text>
@@ -512,7 +694,7 @@ export default function PickupScreen() {
                     <TouchableOpacity
                       key={w}
                       style={[styles.weightChip, moversGoodsCategory === w && styles.weightChipActive]}
-                      onPress={() => { setMoversGoodsCategory(w); if (moversGoodsCategoryError) setMoversGoodsCategoryError(''); }}
+                      onPress={() => setMoversGoodsCategory(w)}
                     >
                       <Text style={[styles.weightChipText, moversGoodsCategory === w && styles.weightChipTextActive]}>
                         {w}
@@ -520,7 +702,6 @@ export default function PickupScreen() {
                     </TouchableOpacity>
                   ))}
                 </View>
-                {moversGoodsCategoryError ? <Text style={styles.errorText}>{moversGoodsCategoryError}</Text> : null}
 
                 <View style={styles.divider} />
 
@@ -616,18 +797,11 @@ export default function PickupScreen() {
             </>
           )}
 
-          {formError ? (
-            <View style={styles.formErrorBanner}>
-              <AlertCircle size={15} color={Colors.danger} />
-              <Text style={styles.formErrorText}>{formError}</Text>
-            </View>
-          ) : null}
-
           <Button
             label={continueLabel}
             onPress={handleContinue}
-            style={{ ...styles.continueBtn, ...(!canContinue ? styles.continueBtnLooksDisabled : {}) }}
-            textStyle={!canContinue ? styles.continueBtnTextLooksDisabled : undefined}
+            disabled={!canContinue}
+            style={styles.continueBtn}
           />
         </ScrollView>
       </SafeAreaView>
@@ -635,9 +809,9 @@ export default function PickupScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
+const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  backgroundImage: { flex: 1, width: '100%', height: '100%' },
+  backgroundImage: { flex: 1 },
   heroHeader: {
     paddingHorizontal: 20,
     paddingTop: 16,
@@ -645,7 +819,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
     borderBottomLeftRadius: 36,
     borderBottomRightRadius: 36,
     overflow: 'hidden',
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     marginBottom: 16,
   },
   heroTopRow: {
@@ -658,9 +832,9 @@ const makeStyles = (colors: any) => StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: colors.iconBorder,
+    borderColor: '#FFD6B3',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -672,13 +846,13 @@ const makeStyles = (colors: any) => StyleSheet.create({
   },
   heroSubtitle: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: '#666',
     fontWeight: '500',
     marginTop: 2,
   },
   chipsRow: { flexDirection: 'row', gap: 8 },
   chip: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
@@ -693,11 +867,11 @@ const makeStyles = (colors: any) => StyleSheet.create({
     paddingTop: 4,
   },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 18,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: '#FFE8D6',
     shadowColor: '#FF6B00',
     shadowOpacity: 0.08,
     shadowRadius: 16,
@@ -708,7 +882,7 @@ const makeStyles = (colors: any) => StyleSheet.create({
   cardLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: colors.placeholder,
+    color: '#9CA3AF',
     letterSpacing: 1.2,
     marginBottom: 4,
   },
@@ -717,42 +891,39 @@ const makeStyles = (colors: any) => StyleSheet.create({
   routeSummaryText: { flex: 1, fontSize: 15, fontWeight: '600', lineHeight: 21 },
   dotWrap: { width: 24, alignItems: 'center' },
   dotWrapTop: { marginTop: 4 },
-  divider: { height: 1, backgroundColor: colors.cardBorder, marginLeft: 34 },
-  locationFieldsWrap: { position: 'relative', paddingRight: 44 },
+  divider: { height: 1, backgroundColor: '#FFE8D6', marginLeft: 34 },
+  locationFieldsWrap: { position: 'relative' },
   swapBtn: {
-  position: 'absolute',
-
-  right: 0,
-  top: 30,
-
-  width: 36,
-  height: 36,
-  borderRadius: 18,
-
-  justifyContent: 'center',
-  alignItems: 'center',
-
-  backgroundColor: colors.iconBg,
-  borderWidth: 1.5,
-  borderColor: colors.iconBorder,
-
-  zIndex: 1000,
-  elevation: 20,
-},
+    position: 'absolute',
+    right: 2,
+    top: '50%',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFF0E6',
+    borderWidth: 1.5,
+    borderColor: '#FFD6B3',
+    justifyContent: 'center',
+    alignItems: 'center',
+    transform: [{ translateY: -18 }],
+    shadowColor: '#FF6B00',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
   removeBtn: { minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
   addStopBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 6, minHeight: 44 },
   addStopIcon: {
     width: 28, height: 28, borderRadius: 14,
-    backgroundColor: colors.iconBg, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#FFF0E6', justifyContent: 'center', alignItems: 'center',
   },
   addStopText: { fontSize: 14, fontWeight: '600', color: Colors.primary },
   continueBtn: { width: '100%' },
-  continueBtnLooksDisabled: { backgroundColor: colors.border, opacity: 0.8 },
-  continueBtnTextLooksDisabled: { color: colors.placeholder },
   logisticsRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 4 },
   logisticsIconWrap: {
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: colors.iconBg, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#FFF0E6', justifyContent: 'center', alignItems: 'center',
     marginTop: 6,
   },
   logisticsInput: {
@@ -767,48 +938,21 @@ const makeStyles = (colors: any) => StyleSheet.create({
   },
   errorText: {
     fontSize: 12,
-    color: Colors.danger,
+    color: '#EF4444',
     marginTop: 2,
     marginLeft: 4,
-  },
-  sameAsSenderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 8 },
-  checkbox: {
-    width: 18, height: 18, borderRadius: 5,
-    borderWidth: 1.5, borderColor: colors.border,
-    backgroundColor: colors.inputBackground,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  checkboxActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  sameAsSenderText: { fontSize: 12.5, fontWeight: '600', color: colors.textSecondary },
-  inputDisabled: { opacity: 0.55 },
-  formErrorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#FEF2F2',
-    borderRadius: 12,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.danger,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  formErrorText: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.danger,
   },
   weightChips: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   weightChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: colors.inputBackground,
+    backgroundColor: '#F5F5F5',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#E0E0E0',
   },
-  weightChipActive: { backgroundColor: colors.iconBg, borderColor: Colors.primary },
-  weightChipText: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
+  weightChipActive: { backgroundColor: '#FFF0E6', borderColor: Colors.primary },
+  weightChipText: { fontSize: 12, fontWeight: '600', color: '#666' },
   weightChipTextActive: { color: Colors.primary },
   infoBanner: {
     flexDirection: 'row',
@@ -816,21 +960,21 @@ const makeStyles = (colors: any) => StyleSheet.create({
     gap: 10,
     padding: 14,
     borderRadius: 20,
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
     borderWidth: 1,
-    borderColor: colors.iconBorder,
+    borderColor: '#FFD6B3',
   },
   infoEmoji: { fontSize: 16 },
-  infoText: { flex: 1, fontSize: 13, lineHeight: 19, color: '#F59E0B' },
+  infoText: { flex: 1, fontSize: 13, lineHeight: 19, color: '#7C4A00' },
   floorHint: { fontSize: 12, fontWeight: '500', marginBottom: 4 },
 
   // ── Map placeholder ────────────────────────────────────────────────────
   mapPlaceholder: {
     height: 200,
     borderRadius: 20,
-    backgroundColor: colors.inputBackground,
+    backgroundColor: '#F5F5F5',
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: '#FFE8D6',
     borderStyle: 'dashed',
     justifyContent: 'center',
     alignItems: 'center',
@@ -841,23 +985,22 @@ const makeStyles = (colors: any) => StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.iconBg,
+    backgroundColor: '#FFF0E6',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.iconBorder,
+    borderColor: '#FFD6B3',
   },
   mapPlaceholderText: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.placeholder,
+    color: '#9CA3AF',
     letterSpacing: 0.3,
   },
   mapPlaceholderSub: {
     fontSize: 12,
-    color: colors.border,
+    color: '#C4C4C4',
     textAlign: 'center',
     paddingHorizontal: 40,
   },
-})
-;
+});

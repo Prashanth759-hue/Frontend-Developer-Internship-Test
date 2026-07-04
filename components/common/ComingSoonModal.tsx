@@ -22,7 +22,7 @@ export function ComingSoonModal({ visible, featureName, onClose }: ComingSoonMod
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
             <View style={[styles.card, { backgroundColor: colors.surface }, Shadow.lg]}>
-              <View style={[styles.iconWrapper, { backgroundColor: colors.iconBg }]}>
+              <View style={styles.iconWrapper}>
                 <Zap size={30} color={Colors.primary} fill={Colors.primary} />
               </View>
               <Text style={[styles.title, { color: colors.textPrimary }]}>Coming Soon</Text>
@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     padding: 28, alignItems: 'center', gap: Spacing.md,
   },
   iconWrapper: {
-    width: 68, height: 68, borderRadius: 34,
+    width: 68, height: 68, borderRadius: 34, backgroundColor: Colors.primaryLight,
     justifyContent: 'center', alignItems: 'center', marginBottom: 4,
   },
   title: { ...Typography.h2, textAlign: 'center' },

@@ -7,9 +7,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Shield, Lock } from 'lucide-react-native';
 import { Colors } from '../theme/colors';
-import { useTheme } from '../theme/ThemeContext';
-import { useLanguage } from '../theme/LanguageContext';
-import HOME_BG from '../assets/bg/homeBg';
 
 const PROCESSING_STEPS = [
   'Initiating secure payment...',
@@ -20,10 +17,6 @@ const PROCESSING_STEPS = [
 ];
 
 export default function PaymentProcessingScreen() {
-  const { colors, isDark } = useTheme();
-  const styles = makeStyles(colors);
-
-  const { t } = useLanguage();
   const { amount, type } = useLocalSearchParams<{ amount: string; type: string }>();
   const [stepIndex, setStepIndex] = useState(0);
 
@@ -68,11 +61,11 @@ export default function PaymentProcessingScreen() {
 
   return (
     <ImageBackground
-      source={HOME_BG}
+      source={require('../assets/images/home-bg.png')}
       style={styles.bg}
       resizeMode="cover"
     >
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <SafeAreaView style={styles.safe}>
         <View style={styles.container}>
 
           {/* Lock icon + spinner */}
@@ -87,7 +80,7 @@ export default function PaymentProcessingScreen() {
             />
           </View>
 
-          <Text style={styles.title}>{t('paymentProcessing')}</Text>
+          <Text style={styles.title}>Processing Payment</Text>
           <Text style={styles.amountText}>₹{parseInt(amount ?? '0', 10).toLocaleString('en-IN')}</Text>
           <Text style={styles.stepText}>{PROCESSING_STEPS[stepIndex]}</Text>
 
@@ -108,7 +101,7 @@ export default function PaymentProcessingScreen() {
           <View style={styles.warningCard}>
             <Shield size={16} color="#D97706" />
             <Text style={styles.warningText}>
-              {t('paymentProcessingNote')}
+              Do not press back or close the app. Your payment is being processed securely.
             </Text>
           </View>
 
@@ -122,8 +115,8 @@ export default function PaymentProcessingScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
-  bg: { flex: 1, width: '100%', height: '100%' },
+const styles = StyleSheet.create({
+  bg: { flex: 1 },
   safe: { flex: 1, backgroundColor: 'transparent' },
 
   container: {
@@ -134,32 +127,31 @@ const makeStyles = (colors: any) => StyleSheet.create({
   iconWrap: { position: 'relative', width: 100, height: 100, justifyContent: 'center', alignItems: 'center' },
   iconCircle: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: colors.iconBg, justifyContent: 'center', alignItems: 'center',
-    borderWidth: 2, borderColor: colors.iconBorder,
+    backgroundColor: '#FFF0E6', justifyContent: 'center', alignItems: 'center',
+    borderWidth: 2, borderColor: '#FFD6B3',
   },
   spinner: {
     position: 'absolute', width: 100, height: 100,
   },
 
-  title: { fontSize: 24, fontWeight: '800', color: colors.textPrimary, textAlign: 'center' },
+  title: { fontSize: 24, fontWeight: '800', color: '#1A1A1A', textAlign: 'center' },
   amountText: { fontSize: 36, fontWeight: '800', color: Colors.primary },
-  stepText: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', minHeight: 20 },
+  stepText: { fontSize: 14, color: '#666', textAlign: 'center', minHeight: 20 },
 
   dotsRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.border },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#E5E7EB' },
   dotActive: { backgroundColor: Colors.primary },
 
   warningCard: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 10,
-    backgroundColor: colors.surfaceElevated, borderRadius: 16, padding: 16,
+    backgroundColor: '#FFFBEB', borderRadius: 16, padding: 16,
     borderWidth: 1, borderColor: '#FDE68A', marginTop: 8,
     width: '100%',
   },
-  warningText: { flex: 1, fontSize: 13, color: '#F59E0B', lineHeight: 20 },
+  warningText: { flex: 1, fontSize: 13, color: '#92400E', lineHeight: 20 },
 
   secureRow: {
     flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8,
   },
-  secureText: { fontSize: 12, color: colors.placeholder },
-})
-;
+  secureText: { fontSize: 12, color: '#9CA3AF' },
+});

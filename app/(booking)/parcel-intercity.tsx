@@ -13,17 +13,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { router } from 'expo-router';
-import { ArrowLeft, MapPin, Circle, Package, ChevronRight, Check, ArrowUpDown } from 'lucide-react-native';
+import { ArrowLeft, MapPin, Circle, Package, ChevronRight, Check } from 'lucide-react-native';
 import { Colors } from '../../theme/colors';
 import { useTheme } from '../../theme/ThemeContext';
-import { useLanguage } from '../../theme/LanguageContext';
 import { Button } from '../../components/common/Button';
 import { useBookingStore } from '../../store/bookingStore';
 import { useMapPickerStore } from '../../store/mapPickerStore';
-import { useSenderReceiver } from '../../hooks/useSenderReceiver';
 import LocationSearchInput from '../../components/booking/LocationSearchInput';
 import { INTERCITY_PARCEL_CATEGORIES, INTERCITY_PARCEL_WEIGHT_SLABS } from '../../constants/mockData';
-import HOME_BG from '../../assets/bg/homeBg';
 
 const POPULAR_ROUTES = [
   { from: 'Bengaluru', to: 'Chennai', eta: '1-2 days' },
@@ -37,9 +34,7 @@ const PICKUP_SLOTS = ['Today', 'Tomorrow', 'Day after tomorrow'];
 type Step = 'route' | 'details' | 'confirm';
 
 export default function ParcelIntercityScreen() {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
-  const { t } = useLanguage();
+  const { colors } = useTheme();
   const { setPickup, setDrop, setEstimatedFare, setSelectedVehicle } = useBookingStore();
   const { result: mapResult, clearResult } = useMapPickerStore();
 
@@ -56,51 +51,24 @@ export default function ParcelIntercityScreen() {
       }
     }, [mapResult])
   );
-  // Sender auto-filled from profile + Receiver "Use my details" toggle
-  const {
-    senderName, senderPhone, senderNameError, senderPhoneError,
-    receiverName, receiverPhone, receiverNameError, receiverPhoneError,
-    sameAsSender, toggleSameAsSender,
-    onSenderNameChange: handleSenderNameChange,
-    onSenderPhoneChange: handleSenderPhoneChange,
-    onReceiverNameChange: handleReceiverNameChange,
-    onReceiverPhoneChange: handleReceiverPhoneChange,
-    isSenderValid, isReceiverValid,
-    validateSenderReceiver,
-  } = useSenderReceiver();
-
+  const [senderName, setSenderName] = useState('');
+  const [senderPhone, setSenderPhone] = useState('');
+  const [receiverName, setReceiverName] = useState('');
+  const [receiverPhone, setReceiverPhone] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedWeightId, setSelectedWeightId] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState('Today');
   const [parcelDesc, setParcelDesc] = useState('');
 
-  // Inline validation errors
-  const [categoryError, setCategoryError] = useState('');
-  const [weightError, setWeightError] = useState('');
-
   const selectedSlab = INTERCITY_PARCEL_WEIGHT_SLABS.find((s) => s.id === selectedWeightId);
   const canProceedRoute = fromCity.trim().length > 1 && toCity.trim().length > 1;
-
-  const handleSwapLocations = () => {
-    const temp = fromCity;
-    setFromCity(toCity);
-    setToCity(temp);
-  };
   const canProceedDetails =
-    isSenderValid &&
-    isReceiverValid &&
+    senderName.trim().length > 1 &&
+    senderPhone.trim().length >= 10 &&
+    receiverName.trim().length > 1 &&
+    receiverPhone.trim().length >= 10 &&
     selectedCategory !== null &&
     selectedWeightId !== null;
-
-  const handleDetailsNext = () => {
-    let hasError = false;
-    if (!validateSenderReceiver()) hasError = true;
-    if (!selectedCategory) { setCategoryError('Please select a parcel category.'); hasError = true; }
-    else setCategoryError('');
-    if (!selectedWeightId) { setWeightError('Please select a weight slab.'); hasError = true; }
-    else setWeightError('');
-    if (!hasError) setStep('confirm');
-  };
 
   const handleRouteNext = () => {
     setPickup({ label: fromCity.trim(), address: fromCity.trim() });
@@ -118,16 +86,16 @@ export default function ParcelIntercityScreen() {
   // ─── Step: Route ───────────────────────────────────────────────────────────
   if (step === 'route') {
     return (
-      <ImageBackground source={HOME_BG} style={styles.bg} resizeMode="cover">
-        <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <ImageBackground source={require('../../assets/images/home-bg.png')} style={styles.bg} resizeMode="cover">
+        <SafeAreaView style={styles.safe}>
           <View style={styles.heroHeader}>
             <View style={styles.heroTopRow}>
               <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
                 <ArrowLeft size={20} color="#FF6B00" />
               </TouchableOpacity>
               <View style={{ flex: 1 }}>
-                <Text style={styles.heroTitle}>{t('parcelInterCity')}</Text>
-                <Text style={styles.heroSubtitle}>{t('parcelInterCityDesc')}</Text>
+                <Text style={styles.heroTitle}>Inter City Parcel</Text>
+                <Text style={styles.heroSubtitle}>Send parcels across cities</Text>
               </View>
             </View>
           </View>
@@ -136,36 +104,25 @@ export default function ParcelIntercityScreen() {
             {/* Route Input */}
             <View style={[styles.card, { zIndex: 20 }]}>
               <Text style={styles.cardLabel}>📍 FROM & TO</Text>
-              <View style={styles.locationFieldsWrap}>
-                <LocationSearchInput
-                  value={fromCity}
-                  onChangeText={setFromCity}
-                  onSelect={setFromCity}
-                  placeholder="From city  (e.g. Bengaluru)"
-                  dotType="circle"
-                  dotColor={Colors.primary}
-                  fieldKey="from"
-                />
-                <View style={styles.routeDivider} />
-                <LocationSearchInput
-                  value={toCity}
-                  onChangeText={setToCity}
-                  onSelect={setToCity}
-                  placeholder="To city  (e.g. Chennai)"
-                  dotType="pin"
-                  dotColor={Colors.primary}
-                  fieldKey="to"
-                />
-                <TouchableOpacity
-                  style={styles.swapBtn}
-                  onPress={handleSwapLocations}
-                  accessibilityLabel="Swap from and to cities"
-                  accessibilityRole="button"
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <ArrowUpDown size={16} color={Colors.primary} />
-                </TouchableOpacity>
-              </View>
+              <LocationSearchInput
+                value={fromCity}
+                onChangeText={setFromCity}
+                onSelect={setFromCity}
+                placeholder="From city  (e.g. Bengaluru)"
+                dotType="circle"
+                dotColor={Colors.primary}
+                fieldKey="from"
+              />
+              <View style={styles.routeDivider} />
+              <LocationSearchInput
+                value={toCity}
+                onChangeText={setToCity}
+                onSelect={setToCity}
+                placeholder="To city  (e.g. Chennai)"
+                dotType="pin"
+                dotColor={Colors.primary}
+                fieldKey="to"
+              />
             </View>
 
             {/* Pickup Slot */}
@@ -217,8 +174,8 @@ export default function ParcelIntercityScreen() {
   // ─── Step: Details ─────────────────────────────────────────────────────────
   if (step === 'details') {
     return (
-      <ImageBackground source={HOME_BG} style={styles.bg} resizeMode="cover">
-        <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <ImageBackground source={require('../../assets/images/home-bg.png')} style={styles.bg} resizeMode="cover">
+        <SafeAreaView style={styles.safe}>
           <View style={styles.heroHeader}>
             <View style={styles.heroTopRow}>
               <TouchableOpacity onPress={() => setStep('route')} style={styles.backBtn}>
@@ -237,64 +194,44 @@ export default function ParcelIntercityScreen() {
             <View style={styles.card}>
               <Text style={styles.cardLabel}>👤 SENDER DETAILS</Text>
               <TextInput
-                style={[styles.inputField, { color: colors.textPrimary }, senderNameError ? styles.inputError : null]}
+                style={[styles.inputField, { color: colors.textPrimary }]}
                 placeholder="Your name"
                 placeholderTextColor="#AAAAAA"
                 value={senderName}
-                onChangeText={handleSenderNameChange}
+                onChangeText={setSenderName}
               />
-              {senderNameError ? <Text style={styles.errorText}>{senderNameError}</Text> : null}
               <View style={styles.inputDivider} />
               <TextInput
-                style={[styles.inputField, { color: colors.textPrimary }, senderPhoneError ? styles.inputError : null]}
+                style={[styles.inputField, { color: colors.textPrimary }]}
                 placeholder="Your phone number"
                 placeholderTextColor="#AAAAAA"
                 value={senderPhone}
-                onChangeText={handleSenderPhoneChange}
+                onChangeText={setSenderPhone}
                 keyboardType="phone-pad"
                 maxLength={10}
               />
-              {senderPhoneError ? <Text style={styles.errorText}>{senderPhoneError}</Text> : null}
             </View>
 
             {/* Receiver */}
             <View style={styles.card}>
               <Text style={styles.cardLabel}>📦 RECEIVER DETAILS</Text>
-
-              <TouchableOpacity
-                style={styles.sameAsSenderRow}
-                onPress={toggleSameAsSender}
-                activeOpacity={0.7}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: sameAsSender }}
-              >
-                <View style={[styles.checkbox, sameAsSender && styles.checkboxActive]}>
-                  {sameAsSender ? <Check size={12} color="#fff" /> : null}
-                </View>
-                <Text style={styles.sameAsSenderText}>Use my details (same as sender)</Text>
-              </TouchableOpacity>
-
               <TextInput
-                style={[styles.inputField, { color: colors.textPrimary }, receiverNameError ? styles.inputError : null, sameAsSender ? styles.inputDisabled : null]}
+                style={[styles.inputField, { color: colors.textPrimary }]}
                 placeholder="Receiver's name"
                 placeholderTextColor="#AAAAAA"
                 value={receiverName}
-                onChangeText={handleReceiverNameChange}
-                editable={!sameAsSender}
+                onChangeText={setReceiverName}
               />
-              {receiverNameError ? <Text style={styles.errorText}>{receiverNameError}</Text> : null}
               <View style={styles.inputDivider} />
               <TextInput
-                style={[styles.inputField, { color: colors.textPrimary }, receiverPhoneError ? styles.inputError : null, sameAsSender ? styles.inputDisabled : null]}
+                style={[styles.inputField, { color: colors.textPrimary }]}
                 placeholder="Receiver's phone number"
                 placeholderTextColor="#AAAAAA"
                 value={receiverPhone}
-                onChangeText={handleReceiverPhoneChange}
+                onChangeText={setReceiverPhone}
                 keyboardType="phone-pad"
                 maxLength={10}
-                editable={!sameAsSender}
               />
-              {receiverPhoneError ? <Text style={styles.errorText}>{receiverPhoneError}</Text> : null}
             </View>
 
             {/* Category */}
@@ -306,7 +243,7 @@ export default function ParcelIntercityScreen() {
                   <TouchableOpacity
                     key={cat.id}
                     style={[styles.categoryCard, isActive && styles.categoryCardActive]}
-                    onPress={() => { setSelectedCategory(cat.id); setCategoryError(''); }}
+                    onPress={() => setSelectedCategory(cat.id)}
                     activeOpacity={0.8}
                   >
                     <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
@@ -317,7 +254,6 @@ export default function ParcelIntercityScreen() {
                 );
               })}
             </View>
-            {categoryError ? <Text style={styles.errorText}>{categoryError}</Text> : null}
 
             {/* Weight */}
             <Text style={styles.sectionTitle}>⚖️ Parcel Weight</Text>
@@ -327,7 +263,7 @@ export default function ParcelIntercityScreen() {
                 <TouchableOpacity
                   key={slab.id}
                   style={[styles.weightCard, isActive && styles.weightCardActive]}
-                  onPress={() => { setSelectedWeightId(slab.id); setWeightError(''); }}
+                  onPress={() => setSelectedWeightId(slab.id)}
                   activeOpacity={0.85}
                 >
                   <Package size={18} color={isActive ? Colors.primary : '#9CA3AF'} />
@@ -350,7 +286,6 @@ export default function ParcelIntercityScreen() {
                 </TouchableOpacity>
               );
             })}
-            {weightError ? <Text style={styles.errorText}>{weightError}</Text> : null}
 
             {/* Optional description */}
             <Text style={styles.sectionTitle}>📝 Parcel Description (Optional)</Text>
@@ -367,8 +302,9 @@ export default function ParcelIntercityScreen() {
 
             <View style={{ height: 16 }} />
             <Button
-              label={selectedSlab ? `${t('confirm')} · ₹${selectedSlab.price}` : t('confirm')}
-              onPress={handleDetailsNext}
+              label={selectedSlab ? `Review Booking · ₹${selectedSlab.price}` : 'Review Booking'}
+              onPress={() => setStep('confirm')}
+              disabled={!canProceedDetails}
               style={{ width: '100%' }}
             />
             <View style={{ height: 32 }} />
@@ -380,8 +316,8 @@ export default function ParcelIntercityScreen() {
 
   // ─── Step: Confirm ─────────────────────────────────────────────────────────
   return (
-    <ImageBackground source={HOME_BG} style={styles.bg} resizeMode="cover">
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+    <ImageBackground source={require('../../assets/images/home-bg.png')} style={styles.bg} resizeMode="cover">
+      <SafeAreaView style={styles.safe}>
         <View style={styles.heroHeader}>
           <View style={styles.heroTopRow}>
             <TouchableOpacity onPress={() => setStep('details')} style={styles.backBtn}>
@@ -479,91 +415,58 @@ export default function ParcelIntercityScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
-  bg: { flex: 1, width: '100%', height: '100%' },
+const styles = StyleSheet.create({
+  bg: { flex: 1 },
   safe: { flex: 1, backgroundColor: 'transparent' },
 
   heroHeader: {
     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 28,
     borderBottomLeftRadius: 36, borderBottomRightRadius: 36,
-    overflow: 'hidden', backgroundColor: colors.surfaceElevated, marginBottom: 16,
+    overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.18)', marginBottom: 16,
   },
   heroTopRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: colors.iconBorder, justifyContent: 'center', alignItems: 'center',
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF',
+    borderWidth: 1, borderColor: '#FFD6B3', justifyContent: 'center', alignItems: 'center',
   },
   heroTitle: { fontSize: 24, fontWeight: '800', color: '#FF6B00', letterSpacing: -0.5 },
-  heroSubtitle: { fontSize: 12, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
+  heroSubtitle: { fontSize: 12, color: '#666', fontWeight: '500', marginTop: 2 },
 
   scrollContent: { paddingHorizontal: 16, paddingBottom: 32 },
 
   card: {
-    backgroundColor: colors.surface, borderRadius: 24, padding: 18,
-    borderWidth: 1, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18,
+    borderWidth: 1, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.07, shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 }, elevation: 4, marginBottom: 16,
   },
   cardLabel: {
-    fontSize: 10, fontWeight: '700', color: colors.placeholder,
+    fontSize: 10, fontWeight: '700', color: '#9CA3AF',
     letterSpacing: 1.2, marginBottom: 12,
   },
 
   routeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 },
   routeInput: { flex: 1, fontSize: 15, fontWeight: '600', paddingVertical: 8 },
-  routeDivider: { height: 1, backgroundColor: colors.cardBorder, marginVertical: 4, marginLeft: 20 },
-  locationFieldsWrap: { position: 'relative', paddingRight: 44 },
-  swapBtn: {
-  position: 'absolute',
-
-  right: 0,
-  top: 30,
-
-  width: 36,
-  height: 36,
-  borderRadius: 18,
-
-  justifyContent: 'center',
-  alignItems: 'center',
-
-  backgroundColor: colors.iconBg,
-  borderWidth: 1.5,
-  borderColor: colors.iconBorder,
-
-  zIndex: 1000,
-  elevation: 20,
-},
+  routeDivider: { height: 1, backgroundColor: '#FFE8D6', marginVertical: 4, marginLeft: 20 },
 
   inputField: { fontSize: 14, fontWeight: '500', paddingVertical: 10 },
-  inputDivider: { height: 1, backgroundColor: colors.cardBorder, marginVertical: 4 },
-  inputError: { borderBottomWidth: 1, borderBottomColor: '#EF4444' },
-  errorText: { fontSize: 12, color: '#EF4444', marginTop: 2, marginLeft: 2 },
-  sameAsSenderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  checkbox: {
-    width: 18, height: 18, borderRadius: 5,
-    borderWidth: 1.5, borderColor: colors.border,
-    backgroundColor: colors.inputBackground,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  checkboxActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  sameAsSenderText: { fontSize: 12.5, fontWeight: '600', color: colors.textSecondary },
-  inputDisabled: { opacity: 0.55 },
+  inputDivider: { height: 1, backgroundColor: '#FFE8D6', marginVertical: 4 },
 
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginBottom: 10, marginTop: 4 },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: '#1A1A1A', marginBottom: 10, marginTop: 4 },
 
   slotRow: { flexDirection: 'row', gap: 8, marginBottom: 20, flexWrap: 'wrap' },
   slotChip: {
     paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#FFE8D6',
   },
-  slotChipActive: { borderColor: Colors.primary, backgroundColor: colors.subtleBg },
-  slotText: { fontSize: 13, fontWeight: '600', color: colors.placeholder },
+  slotChipActive: { borderColor: Colors.primary, backgroundColor: '#FFF7F2' },
+  slotText: { fontSize: 13, fontWeight: '600', color: '#9CA3AF' },
   slotTextActive: { color: Colors.primary },
 
   popularCard: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: colors.surface, borderRadius: 16, padding: 14, marginBottom: 10,
-    borderWidth: 1, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14, marginBottom: 10,
+    borderWidth: 1, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.05, shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 }, elevation: 2,
   },
@@ -573,39 +476,39 @@ const makeStyles = (colors: any) => StyleSheet.create({
   categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
   categoryCard: {
     width: '30%', alignItems: 'center', gap: 6,
-    backgroundColor: colors.surface, borderRadius: 16, padding: 12,
-    borderWidth: 1.5, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 12,
+    borderWidth: 1.5, borderColor: '#FFE8D6',
   },
-  categoryCardActive: { borderColor: Colors.primary, backgroundColor: colors.subtleBg },
+  categoryCardActive: { borderColor: Colors.primary, backgroundColor: '#FFF7F2' },
   categoryEmoji: { fontSize: 24 },
-  categoryName: { fontSize: 11, fontWeight: '700', color: colors.textSecondary, textAlign: 'center' },
+  categoryName: { fontSize: 11, fontWeight: '700', color: '#6B7280', textAlign: 'center' },
   categoryNameActive: { color: Colors.primary },
 
   weightCard: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: colors.surface, borderRadius: 18, padding: 14, marginBottom: 10,
-    borderWidth: 1.5, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderRadius: 18, padding: 14, marginBottom: 10,
+    borderWidth: 1.5, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.05, shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 }, elevation: 2,
   },
-  weightCardActive: { borderColor: Colors.primary, backgroundColor: colors.subtleBg },
-  weightLabel: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
+  weightCardActive: { borderColor: Colors.primary, backgroundColor: '#FFF7F2' },
+  weightLabel: { fontSize: 14, fontWeight: '700', color: '#1A1A1A' },
   weightSublabel: { fontSize: 12, marginTop: 1 },
-  weightPrice: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
+  weightPrice: { fontSize: 16, fontWeight: '800', color: '#1A1A1A' },
   checkCircle: {
     width: 22, height: 22, borderRadius: 11,
     backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center',
   },
 
   summaryCard: {
-    backgroundColor: colors.surface, borderRadius: 24, padding: 18,
-    borderWidth: 1, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18,
+    borderWidth: 1, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.07, shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 }, elevation: 4, marginBottom: 12,
   },
   summaryRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 },
   summaryText: { fontSize: 14, fontWeight: '600' },
-  summaryDivider: { height: 1, backgroundColor: colors.cardBorder, marginVertical: 4, marginLeft: 18 },
+  summaryDivider: { height: 1, backgroundColor: '#FFE8D6', marginVertical: 4, marginLeft: 18 },
   summaryItemRow: {
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'center', paddingVertical: 6,
@@ -615,8 +518,8 @@ const makeStyles = (colors: any) => StyleSheet.create({
   summaryItemValue: { fontSize: 13, fontWeight: '600' },
 
   fareCard: {
-    backgroundColor: colors.surface, borderRadius: 24, padding: 18,
-    borderWidth: 1, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18,
+    borderWidth: 1, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.07, shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 }, elevation: 4, marginBottom: 12,
   },
@@ -627,15 +530,14 @@ const makeStyles = (colors: any) => StyleSheet.create({
   fareLabel: { fontSize: 13 },
   fareValue: { fontSize: 13, fontWeight: '600' },
   fareTotalRow: {
-    borderTopWidth: 1, borderTopColor: colors.cardBorder, marginTop: 4, paddingTop: 12,
+    borderTopWidth: 1, borderTopColor: '#FFE8D6', marginTop: 4, paddingTop: 12,
   },
-  fareTotalLabel: { fontSize: 15, fontWeight: '800', color: colors.textPrimary },
+  fareTotalLabel: { fontSize: 15, fontWeight: '800', color: '#1A1A1A' },
   fareTotalValue: { fontSize: 18, fontWeight: '800', color: Colors.primary },
 
   infoCard: {
-    backgroundColor: colors.subtleBg, borderRadius: 16, padding: 14,
-    borderWidth: 1, borderColor: colors.cardBorder, marginBottom: 8,
+    backgroundColor: '#FFF7F2', borderRadius: 16, padding: 14,
+    borderWidth: 1, borderColor: '#FFE8D6', marginBottom: 8,
   },
   infoText: { fontSize: 12, lineHeight: 18 },
-})
-;
+});

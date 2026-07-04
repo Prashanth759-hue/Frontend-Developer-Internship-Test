@@ -14,10 +14,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { router } from 'expo-router';
-import { ArrowLeft, MapPin, Circle, Check, Clock, Users, ChevronRight, ArrowUpDown } from 'lucide-react-native';
+import { ArrowLeft, MapPin, Circle, Check, Clock, Users, ChevronRight } from 'lucide-react-native';
 import { Colors } from '../../theme/colors';
 import { useTheme } from '../../theme/ThemeContext';
-import { useLanguage } from '../../theme/LanguageContext';
 import { Button } from '../../components/common/Button';
 import { useBookingStore } from '../../store/bookingStore';
 import { useMapPickerStore } from '../../store/mapPickerStore';
@@ -26,7 +25,6 @@ import {
   INTERCITY_MOVERS_PACKAGES,
   PACKING_MATERIAL_PRICE,
 } from '../../constants/mockData';
-import HOME_BG from '../../assets/bg/homeBg';
 
 const PACKAGE_IMAGES: Record<string, ImageSourcePropType> = {
   mini_truck: require('../../assets/images/icon-mini-truck.png'),
@@ -43,9 +41,7 @@ const POPULAR_ROUTES = [
 type Step = 'route' | 'package';
 
 export default function MoversIntercityScreen() {
-  const { colors, isDark} = useTheme();
-  const styles = makeStyles(colors);
-  const { t } = useLanguage();
+  const { colors } = useTheme();
   const { setSelectedVehicle, setEstimatedFare, setHelperCount, setPickup, setDrop, setMoversFlow } = useBookingStore();
   const { result: mapResult, clearResult } = useMapPickerStore();
 
@@ -72,12 +68,6 @@ export default function MoversIntercityScreen() {
 
   const canProceedRoute = fromCity.trim().length > 1 && toCity.trim().length > 1;
 
-  const handleSwapLocations = () => {
-    const temp = fromCity;
-    setFromCity(toCity);
-    setToCity(temp);
-  };
-
   const handleRouteNext = () => {
     setPickup({ label: fromCity.trim(), address: fromCity.trim() });
     setDrop({ label: toCity.trim(), address: toCity.trim() });
@@ -96,8 +86,8 @@ export default function MoversIntercityScreen() {
   // ─── Step: Route ────────────────────────────────────────────────────────────
   if (step === 'route') {
     return (
-      <ImageBackground source={HOME_BG} style={styles.bg} resizeMode="cover">
-        <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+      <ImageBackground source={require('../../assets/images/home-bg.png')} style={styles.bg} resizeMode="cover">
+        <SafeAreaView style={styles.safe}>
           <View style={styles.heroHeader}>
             <View style={styles.heroTopRow}>
               <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
@@ -114,36 +104,25 @@ export default function MoversIntercityScreen() {
             {/* Route input */}
             <View style={[styles.card, { zIndex: 20 }]}>
               <Text style={styles.cardLabel}>📍 YOUR MOVE ROUTE</Text>
-              <View style={styles.locationFieldsWrap}>
-                <LocationSearchInput
-                  value={fromCity}
-                  onChangeText={setFromCity}
-                  onSelect={setFromCity}
-                  placeholder="Moving from  (e.g. Bengaluru)"
-                  dotType="circle"
-                  dotColor={Colors.primary}
-                  fieldKey="from"
-                />
-                <View style={styles.routeDivider} />
-                <LocationSearchInput
-                  value={toCity}
-                  onChangeText={setToCity}
-                  onSelect={setToCity}
-                  placeholder="Moving to  (e.g. Chennai)"
-                  dotType="pin"
-                  dotColor={Colors.primary}
-                  fieldKey="to"
-                />
-                <TouchableOpacity
-                  style={styles.swapBtn}
-                  onPress={handleSwapLocations}
-                  accessibilityLabel="Swap from and to cities"
-                  accessibilityRole="button"
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <ArrowUpDown size={16} color={Colors.primary} />
-                </TouchableOpacity>
-              </View>
+              <LocationSearchInput
+                value={fromCity}
+                onChangeText={setFromCity}
+                onSelect={setFromCity}
+                placeholder="Moving from  (e.g. Bengaluru)"
+                dotType="circle"
+                dotColor={Colors.primary}
+                fieldKey="from"
+              />
+              <View style={styles.routeDivider} />
+              <LocationSearchInput
+                value={toCity}
+                onChangeText={setToCity}
+                onSelect={setToCity}
+                placeholder="Moving to  (e.g. Chennai)"
+                dotType="pin"
+                dotColor={Colors.primary}
+                fieldKey="to"
+              />
             </View>
 
             {/* Key features */}
@@ -180,7 +159,7 @@ export default function MoversIntercityScreen() {
 
             <View style={{ height: 16 }} />
             <Button
-              label={t('confirm')}
+              label="View Packages"
               onPress={handleRouteNext}
               disabled={!canProceedRoute}
               style={{ width: '100%' }}
@@ -194,8 +173,8 @@ export default function MoversIntercityScreen() {
 
   // ─── Step: Package ─────────────────────────────────────────────────────────
   return (
-    <ImageBackground source={HOME_BG} style={styles.bg} resizeMode="cover">
-      <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? colors.background : 'transparent' }]}>
+    <ImageBackground source={require('../../assets/images/home-bg.png')} style={styles.bg} resizeMode="cover">
+      <SafeAreaView style={styles.safe}>
         <View style={styles.heroHeader}>
           <View style={styles.heroTopRow}>
             <TouchableOpacity onPress={() => setStep('route')} style={styles.backBtn}>
@@ -207,8 +186,8 @@ export default function MoversIntercityScreen() {
             </View>
           </View>
           <View style={styles.chipsRow}>
-            <View style={styles.chip}><Text style={styles.chipText}>{t('chipInsuredMove')}</Text></View>
-            <View style={styles.chip}><Text style={styles.chipText}>{t('chipFuelTolls')}</Text></View>
+            <View style={styles.chip}><Text style={styles.chipText}>🛡️ Insured move</Text></View>
+            <View style={styles.chip}><Text style={styles.chipText}>🌙 Night allowance incl.</Text></View>
           </View>
         </View>
 
@@ -299,25 +278,25 @@ export default function MoversIntercityScreen() {
   );
 }
 
-const makeStyles = (colors: any) => StyleSheet.create({
-  bg: { flex: 1, width: '100%', height: '100%' },
+const styles = StyleSheet.create({
+  bg: { flex: 1 },
   safe: { flex: 1, backgroundColor: 'transparent' },
 
   heroHeader: {
     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 28,
     borderBottomLeftRadius: 36, borderBottomRightRadius: 36,
-    overflow: 'hidden', backgroundColor: colors.surfaceElevated, marginBottom: 16,
+    overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.18)', marginBottom: 16,
   },
   heroTopRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 8 },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: colors.iconBorder, justifyContent: 'center', alignItems: 'center',
+    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF',
+    borderWidth: 1, borderColor: '#FFD6B3', justifyContent: 'center', alignItems: 'center',
   },
   heroTitle: { fontSize: 24, fontWeight: '800', color: '#FF6B00', letterSpacing: -0.5 },
-  heroSubtitle: { fontSize: 12, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
+  heroSubtitle: { fontSize: 12, color: '#666', fontWeight: '500', marginTop: 2 },
   chipsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   chip: {
-    backgroundColor: colors.surface, paddingHorizontal: 12, paddingVertical: 6,
+    backgroundColor: '#FFFFFF', paddingHorizontal: 12, paddingVertical: 6,
     borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
   },
   chipText: { fontSize: 11, fontWeight: '600', color: '#FF6B00' },
@@ -325,50 +304,30 @@ const makeStyles = (colors: any) => StyleSheet.create({
   scrollContent: { paddingHorizontal: 16, paddingBottom: 32 },
 
   card: {
-    backgroundColor: colors.surface, borderRadius: 24, padding: 18,
-    borderWidth: 1, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderRadius: 24, padding: 18,
+    borderWidth: 1, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.07, shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 }, elevation: 4, marginBottom: 16,
   },
-  cardLabel: { fontSize: 10, fontWeight: '700', color: colors.placeholder, letterSpacing: 1.2, marginBottom: 12 },
+  cardLabel: { fontSize: 10, fontWeight: '700', color: '#9CA3AF', letterSpacing: 1.2, marginBottom: 12 },
 
   routeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4 },
   routeInput: { flex: 1, fontSize: 15, fontWeight: '600', paddingVertical: 8 },
-  routeDivider: { height: 1, backgroundColor: colors.cardBorder, marginVertical: 4, marginLeft: 20 },
-  locationFieldsWrap: { position: 'relative', paddingRight: 44 },
-  swapBtn: {
-  position: 'absolute',
+  routeDivider: { height: 1, backgroundColor: '#FFE8D6', marginVertical: 4, marginLeft: 20 },
 
-  right: 0,
-  top: 30,
-
-  width: 36,
-  height: 36,
-  borderRadius: 18,
-
-  justifyContent: 'center',
-  alignItems: 'center',
-
-  backgroundColor: colors.iconBg,
-  borderWidth: 1.5,
-  borderColor: colors.iconBorder,
-
-  zIndex: 1000,
-  elevation: 20,
-},
   featuresCard: {
-    backgroundColor: colors.subtleBg, borderRadius: 24, padding: 18,
-    borderWidth: 1, borderColor: colors.cardBorder, marginBottom: 20,
+    backgroundColor: '#FFF7F2', borderRadius: 24, padding: 18,
+    borderWidth: 1, borderColor: '#FFE8D6', marginBottom: 20,
   },
   featureRow: { paddingVertical: 5 },
   featureText: { fontSize: 13, fontWeight: '500' },
 
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: colors.textPrimary, marginBottom: 10 },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: '#1A1A1A', marginBottom: 10 },
 
   popularCard: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: colors.surface, borderRadius: 16, padding: 14, marginBottom: 10,
-    borderWidth: 1, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14, marginBottom: 10,
+    borderWidth: 1, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.05, shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 }, elevation: 2,
   },
@@ -378,11 +337,11 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
   packageCard: {
     flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 24, padding: 16,
-    backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.07, shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 }, elevation: 4,
   },
-  packageCardActive: { borderColor: Colors.primary, borderWidth: 2, backgroundColor: colors.subtleBg },
+  packageCardActive: { borderColor: Colors.primary, borderWidth: 2, backgroundColor: '#FFF7F2' },
   packageImage: { width: 72, height: 72, resizeMode: 'contain' },
   packageInfo: { flex: 1, gap: 3 },
   packageName: { fontSize: 16, fontWeight: '700' },
@@ -390,14 +349,14 @@ const makeStyles = (colors: any) => StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4, flexWrap: 'wrap' },
   helpersBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: colors.iconBg, paddingHorizontal: 8, paddingVertical: 2,
+    backgroundColor: '#FFF0E6', paddingHorizontal: 8, paddingVertical: 2,
     borderRadius: 10, marginRight: 6,
   },
   helpersBadgeText: { fontSize: 10, fontWeight: '700', color: Colors.primary },
   etaText: { fontSize: 12, fontWeight: '600', color: Colors.primary },
   nightNote: { fontSize: 11, marginTop: 2 },
   fareArea: { alignItems: 'flex-end', gap: 8 },
-  fareText: { fontSize: 20, fontWeight: '800', color: colors.textPrimary },
+  fareText: { fontSize: 20, fontWeight: '800', color: '#1A1A1A' },
   fareTextActive: { color: Colors.primary },
   checkCircle: {
     width: 24, height: 24, borderRadius: 12,
@@ -408,12 +367,12 @@ const makeStyles = (colors: any) => StyleSheet.create({
 
   packingCard: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: colors.surface, borderRadius: 24, padding: 16,
-    borderWidth: 1.5, borderColor: colors.cardBorder,
+    backgroundColor: '#FFFFFF', borderRadius: 24, padding: 16,
+    borderWidth: 1.5, borderColor: '#FFE8D6',
     shadowColor: '#FF6B00', shadowOpacity: 0.07, shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 }, elevation: 4,
   },
-  packingCardActive: { borderColor: Colors.primary, borderWidth: 2, backgroundColor: colors.subtleBg },
+  packingCardActive: { borderColor: Colors.primary, borderWidth: 2, backgroundColor: '#FFF7F2' },
   packingImage: { width: 48, height: 48, resizeMode: 'contain' },
   packingInfo: { flex: 1, gap: 2 },
   packingTitle: { fontSize: 14, fontWeight: '700' },
@@ -422,15 +381,14 @@ const makeStyles = (colors: any) => StyleSheet.create({
   packingPrice: { fontSize: 13, fontWeight: '800', color: Colors.primary },
   checkbox: {
     width: 22, height: 22, borderRadius: 11, borderWidth: 1.5,
-    borderColor: colors.iconBorder, backgroundColor: colors.inputBackground,
+    borderColor: '#FFD6B3', backgroundColor: '#FAFAFA',
     justifyContent: 'center', alignItems: 'center',
   },
   checkboxActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
 
   infoCard: {
-    backgroundColor: colors.subtleBg, borderRadius: 16, padding: 14,
-    borderWidth: 1, borderColor: colors.cardBorder,
+    backgroundColor: '#FFF7F2', borderRadius: 16, padding: 14,
+    borderWidth: 1, borderColor: '#FFE8D6',
   },
   infoText: { fontSize: 12, lineHeight: 18 },
-})
-;
+});
