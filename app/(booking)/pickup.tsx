@@ -688,9 +688,10 @@ const makeStyles = (colors: any) => StyleSheet.create({
   chipText: { fontSize: 11, fontWeight: '600', color: '#FF6B00' },
   content: {
     paddingHorizontal: 16,
-    paddingBottom: 40,
+    paddingBottom: 90,
     gap: 14,
     paddingTop: 4,
+    flexGrow: 1,
   },
   card: {
     backgroundColor: colors.surface,

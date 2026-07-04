@@ -31,6 +31,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
 import { MapPin, Circle, Navigation, Clock, Home, Briefcase, SearchX } from 'lucide-react-native';
@@ -262,6 +263,13 @@ export default function LocationSearchInput({
       {/* ── Dropdown ── */}
       {showDropdown && (
         <View style={[styles.dropdown, { backgroundColor: colors.background ?? '#FFF' }]}>
+          <ScrollView
+            style={styles.dropdownScroll}
+            contentContainerStyle={styles.dropdownContent}
+            nestedScrollEnabled
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator
+          >
 
           {/* Select on Map — always first */}
           <TouchableOpacity
@@ -401,6 +409,7 @@ export default function LocationSearchInput({
               </View>
             </View>
           )}
+          </ScrollView>
         </View>
       )}
     </View>
@@ -467,9 +476,16 @@ const makeStyles = (colors: any) => StyleSheet.create({
     overflow: 'hidden',
     marginTop: 8,
     marginBottom: 4,
-    maxHeight: 420,
+    maxHeight: 360,
     // Web: needs explicit z-index so it layers above sibling cards
     ...(Platform.OS === 'web' ? { zIndex: 999 } : {}),
+  },
+
+  dropdownScroll: {
+    maxHeight: 360,
+  },
+  dropdownContent: {
+    paddingBottom: 6,
   },
 
   mapRow: {
