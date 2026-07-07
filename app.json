@@ -11,7 +11,8 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.vahan360.customer",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Vahan360 uses your location to show nearby drivers, set your pickup point automatically, and give you accurate fare estimates."
+        "NSLocationWhenInUseUsageDescription": "Vahan360 uses your location to show nearby drivers, set your pickup point automatically, and give you accurate fare estimates.",
+        "NSContactsUsageDescription": "Vahan360 needs access to your contacts so you can quickly fill in receiver details when sending a parcel."
       }
     },
     "android": {
@@ -20,7 +21,7 @@
         "backgroundColor": "#FF7A00"
       },
       "package": "com.vahan360.customer",
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "READ_CONTACTS"]
     },
     "web": {
       "bundler": "metro",
@@ -34,6 +35,12 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Vahan360 uses your location to show nearby drivers, set your pickup point automatically, and give you accurate fare estimates."
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Vahan360 needs access to your contacts so you can quickly fill in receiver details when sending a parcel."
         }
       ],
       [

@@ -12,7 +12,11 @@ import { Colors } from '../../theme/colors';
 import { BorderRadius, Layout, Shadow, Spacing } from '../../theme/spacing';
 import { useTheme } from '../../theme/ThemeContext';
 import { StatusBadge } from '../common/StatusBadge';
-import { MOCK_ORDERS } from '../../constants/mockData';
+import { useAuthStore } from '../../store/authStore';
+import { useTripHistoryStore, getUserTrips, type TripRecord } from '../../store/tripHistoryStore';
+import { MOCK_ORDERS, MOCK_USER } from '../../constants/mockData';
+
+type RecentOrder = (typeof MOCK_ORDERS)[0] | TripRecord;
 
 const SERVICE_ICONS: Record<string, React.ReactNode> = {
   'Bike Taxi':        <Bike size={18} color="#FFFFFF" />,
@@ -40,13 +44,20 @@ const SERVICE_TYPE_MAP: Record<string, string> = {
 };
 
 interface RecentBookingsProps {
-  onRebook: (order: (typeof MOCK_ORDERS)[0]) => void;
+  onRebook: (order: RecentOrder) => void;
 }
 
 export function RecentBookings({ onRebook }: RecentBookingsProps) {
   const { colors } = useTheme();
+  const styles = makeStyles(colors);
+  const { user } = useAuthStore();
 
-  const recent = MOCK_ORDERS.slice(0, 3);
+  // Only the seeded demo account sees the demo MOCK_ORDERS. Every account
+  // sees its own real trips (added live as trips are completed), so a
+  // new/real user never sees someone else's fake "Recent Trips".
+  const isDemoAccount = user?.id === MOCK_USER.id;
+  const realTrips = useTripHistoryStore((s) => getUserTrips(s, user?.id));
+  const recent = [...realTrips, ...(isDemoAccount ? MOCK_ORDERS : [])].slice(0, 3);
 
   if (recent.length === 0) return null;
 
@@ -133,7 +144,7 @@ export function RecentBookings({ onRebook }: RecentBookingsProps) {
 
 export { SERVICE_TYPE_MAP };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: any) => StyleSheet.create({
   section: {
     paddingHorizontal: Layout.screenPadding,
     gap: 10,
@@ -146,24 +157,24 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#1A1A1A',
+    color: colors.textPrimary,
     letterSpacing: -0.3,
   },
   seeAllBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
-    backgroundColor: '#FFF0E6',
+    backgroundColor: colors.iconBg,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#FFD6B3',
+    borderColor: colors.iconBorder,
   },
   seeAll: { fontSize: 12, fontWeight: '600', color: '#FF6B00' },
   card: {
     borderRadius: 22,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: '#FFE5D0',
     padding: 14,
@@ -191,8 +202,8 @@ const styles = StyleSheet.create({
   },
   info: { flex: 1, gap: 3 },
   service: { fontSize: 14, fontWeight: '700', color: '#1A1A1A' },
-  route: { fontSize: 12, color: '#6B7280', lineHeight: 16 },
-  datetime: { fontSize: 11, color: '#9CA3AF' },
+  route: { fontSize: 12, color: colors.placeholder, lineHeight: 16 },
+  datetime: { fontSize: 11, color: colors.placeholder },
   rightArea: { alignItems: 'flex-end', gap: 5, flexShrink: 0 },
   fare: { fontSize: 14, fontWeight: '700', color: '#1A1A1A' },
   rebookBtn: {
@@ -205,7 +216,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.primary,
     marginTop: 2,
-    backgroundColor: '#FFF0E6',
+    backgroundColor: colors.iconBg,
   },
   rebookText: { fontSize: 11, fontWeight: '600', color: Colors.primary },
 });

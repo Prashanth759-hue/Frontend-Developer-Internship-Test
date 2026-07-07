@@ -31,6 +31,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
 import { MapPin, Circle, Navigation, Clock, Home, Briefcase, SearchX } from 'lucide-react-native';
@@ -111,6 +112,7 @@ export default function LocationSearchInput({
   containerStyle,
 }: Props) {
   const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const [focused, setFocused] = useState(false);
   const [searching, setSearching] = useState(false);
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -261,6 +263,13 @@ export default function LocationSearchInput({
       {/* ── Dropdown ── */}
       {showDropdown && (
         <View style={[styles.dropdown, { backgroundColor: colors.background ?? '#FFF' }]}>
+          <ScrollView
+            style={styles.dropdownScroll}
+            contentContainerStyle={styles.dropdownContent}
+            nestedScrollEnabled
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator
+          >
 
           {/* Select on Map — always first */}
           <TouchableOpacity
@@ -400,13 +409,14 @@ export default function LocationSearchInput({
               </View>
             </View>
           )}
+          </ScrollView>
         </View>
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: any) => StyleSheet.create({
   wrapper: {
     position: 'relative',
     zIndex: 10,
@@ -441,23 +451,23 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     flexShrink: 0,
   },
   clearText: {
     fontSize: 10,
-    color: '#6B7280',
+    color: colors.placeholder,
     fontWeight: '700',
   },
 
   // ── Dropdown ──────────────────────────────────────────────────────────────────
   dropdown: {
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#FFE8D6',
+    borderColor: colors.cardBorder,
     shadowColor: '#FF6B00',
     shadowOpacity: 0.12,
     shadowRadius: 16,
@@ -466,9 +476,16 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginTop: 8,
     marginBottom: 4,
-    maxHeight: 420,
+    maxHeight: 360,
     // Web: needs explicit z-index so it layers above sibling cards
     ...(Platform.OS === 'web' ? { zIndex: 999 } : {}),
+  },
+
+  dropdownScroll: {
+    maxHeight: 360,
+  },
+  dropdownContent: {
+    paddingBottom: 6,
   },
 
   mapRow: {
@@ -477,17 +494,17 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    backgroundColor: '#FFF7F2',
+    backgroundColor: colors.subtleBg,
   },
   mapIconWrap: {
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#FFF0E6',
+    backgroundColor: colors.iconBg,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#FFD6B3',
+    borderColor: colors.iconBorder,
   },
   mapRowTitle: {
     fontSize: 14,
@@ -496,13 +513,13 @@ const styles = StyleSheet.create({
   },
   mapRowSub: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: colors.placeholder,
     marginTop: 1,
   },
 
   divider: {
     height: 1,
-    backgroundColor: '#FFE8D6',
+    backgroundColor: colors.cardBorder,
     marginHorizontal: 14,
   },
 
@@ -522,19 +539,19 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
+    borderBottomColor: colors.divider,
   },
   suggestionIconWrap: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.inputBackground,
     justifyContent: 'center',
     alignItems: 'center',
     flexShrink: 0,
   },
   savedIconWrap: {
-    backgroundColor: '#FFF0E6',
+    backgroundColor: colors.iconBg,
   },
   suggestionName: {
     fontSize: 14,
@@ -542,24 +559,24 @@ const styles = StyleSheet.create({
   },
   suggestionCity: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: colors.placeholder,
     marginTop: 1,
   },
   suggestionDistance: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#9CA3AF',
+    color: colors.placeholder,
     flexShrink: 0,
   },
 
   // ── Skeleton (loading) ──────────────────────────────────────────────────────
   skeletonBlock: {
-    backgroundColor: '#EFEFEF',
+    backgroundColor: colors.skeleton,
   },
   skeletonLine: {
     height: 11,
     borderRadius: 4,
-    backgroundColor: '#EFEFEF',
+    backgroundColor: colors.skeleton,
   },
 
   // ── No results ──────────────────────────────────────────────────────────────
@@ -572,12 +589,12 @@ const styles = StyleSheet.create({
   noResultsTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#6B7280',
+    color: colors.placeholder,
     marginTop: 6,
   },
   noResultsText: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: colors.placeholder,
     textAlign: 'center',
     lineHeight: 17,
     marginBottom: 8,
@@ -597,7 +614,7 @@ const styles = StyleSheet.create({
   noResultsBtnText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#6B7280',
+    color: colors.placeholder,
   },
   noResultsBtnPrimary: {
     backgroundColor: Colors.primary,
@@ -605,6 +622,6 @@ const styles = StyleSheet.create({
   noResultsBtnPrimaryText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.surface,
   },
 });

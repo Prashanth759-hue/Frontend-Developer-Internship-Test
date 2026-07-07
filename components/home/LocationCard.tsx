@@ -26,6 +26,7 @@ interface LocationCardProps {
 
 export function LocationCard({ onSelect, onAddNew }: LocationCardProps) {
   const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const { addresses } = useSavedAddressStore();
 
   if (addresses.length === 0) return null;
@@ -104,10 +105,10 @@ export function LocationCard({ onSelect, onAddNew }: LocationCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: any) => StyleSheet.create({
   card: {
     marginHorizontal: Layout.screenPadding,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 28,
     overflow: 'hidden',
     shadowColor: '#FF6B00',
@@ -116,7 +117,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 6,
     borderWidth: 1,
-    borderColor: '#FFE8D6',
+    borderColor: colors.cardBorder,
   },
   cardHeader: {
     overflow: 'hidden',
@@ -167,16 +168,16 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1A1A1A',
+    color: colors.textPrimary,
   },
   address: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.placeholder,
     lineHeight: 16,
   },
   divider: {
     height: 1,
-    backgroundColor: '#FFF0E6',
+    backgroundColor: colors.iconBg,
     marginLeft: 50,
   },
   addRow: {
@@ -190,11 +191,11 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#FFF0E6',
+    backgroundColor: colors.iconBg,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#FFD6B3',
+    borderColor: colors.iconBorder,
     borderStyle: 'dashed',
   },
   addLabel: {
@@ -206,7 +207,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#FFF0E6',
+    backgroundColor: colors.iconBg,
     justifyContent: 'center',
     alignItems: 'center',
   },

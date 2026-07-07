@@ -1,9 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, ColorScheme } from './colors';
 
-type ThemeMode = 'light' | 'dark' | 'auto';
+export type ThemeMode = 'light' | 'dark';
 
 type ThemeColors = typeof Colors.light | typeof Colors.dark;
 
@@ -12,6 +11,8 @@ interface ThemeContextType {
   colorScheme: ColorScheme;
   colors: ThemeColors;
   setMode: (mode: ThemeMode) => void;
+  /** Flips between light and dark — this is the only theme control the app exposes. */
+  toggleMode: () => void;
   isDark: boolean;
 }
 
@@ -22,6 +23,7 @@ const ThemeContext = createContext<ThemeContextType>({
   colorScheme: 'light',
   colors: Colors.light,
   setMode: () => {},
+  toggleMode: () => {},
   isDark: false,
 });
 
@@ -30,16 +32,14 @@ export function ThemeProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const systemScheme = useColorScheme();
-
-  // Default theme is 'light' (not 'auto') per product requirement.
+  // Default theme is always 'light' on first install — no system/auto option.
   const [mode, setModeState] = useState<ThemeMode>('light');
   const [loaded, setLoaded] = useState(false);
 
   // Restore the user's saved theme choice on app start.
   useEffect(() => {
     AsyncStorage.getItem(THEME_STORAGE_KEY).then((saved) => {
-      if (saved === 'light' || saved === 'dark' || saved === 'auto') {
+      if (saved === 'light' || saved === 'dark') {
         setModeState(saved);
       }
       setLoaded(true);
@@ -52,16 +52,13 @@ export function ThemeProvider({
     AsyncStorage.setItem(THEME_STORAGE_KEY, newMode);
   };
 
-  const colorScheme: ColorScheme =
-    mode === 'auto'
-      ? ((systemScheme ?? 'light') as ColorScheme)
-      : mode;
+  const toggleMode = () => {
+    setMode(mode === 'dark' ? 'light' : 'dark');
+  };
 
-  const isDark = colorScheme === 'dark';
-
-  const colors: ThemeColors = isDark
-    ? Colors.dark
-    : Colors.light;
+  const colorScheme: ColorScheme = mode;
+  const isDark = mode === 'dark';
+  const colors: ThemeColors = isDark ? Colors.dark : Colors.light;
 
   // Avoid a flash of the wrong theme while AsyncStorage loads.
   if (!loaded) return null;
@@ -73,6 +70,7 @@ export function ThemeProvider({
         colorScheme,
         colors,
         setMode,
+        toggleMode,
         isDark,
       }}
     >

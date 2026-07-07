@@ -1,4 +1,17 @@
-import { TextStyle } from 'react-native';
+import { TextStyle, Dimensions, PixelRatio } from 'react-native';
+
+// ── Responsive font scaling ───────────────────────────────────────────────
+// Scales font sizes relative to a 390px wide base (iPhone 14 / Pixel 7).
+// On a 360px phone fonts shrink slightly; on a 430px phone they grow slightly.
+// Clamped so nothing goes below 85% or above 115% of the design value.
+const BASE_WIDTH = 390;
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const scale = (size: number): number => {
+  const ratio = SCREEN_WIDTH / BASE_WIDTH;
+  const clamped = Math.min(Math.max(ratio, 0.85), 1.15);
+  return Math.round(PixelRatio.roundToNearestPixel(size * clamped));
+};
+// ─────────────────────────────────────────────────────────────────────────
 
 export const FontFamily = {
   regular: 'Inter_400Regular',
@@ -8,22 +21,22 @@ export const FontFamily = {
 };
 
 export const FontSize = {
-  xs: 11,
-  sm: 12,
-  md: 14,
-  lg: 16,
-  xl: 20,
-  xxl: 26,
-  xxxl: 34,
+  xs: scale(11),
+  sm: scale(12),
+  md: scale(14),
+  lg: scale(16),
+  xl: scale(20),
+  xxl: scale(26),
+  xxxl: scale(34),
 };
 
 export const LineHeight = {
-  xs: 15,
-  sm: 17,
-  md: 20,
-  lg: 24,
-  xl: 28,
-  xxl: 34,
+  xs: scale(15),
+  sm: scale(17),
+  md: scale(20),
+  lg: scale(24),
+  xl: scale(28),
+  xxl: scale(34),
 };
 
 export const Typography = {

@@ -18,10 +18,164 @@ export const MOCK_SERVICES = [
 ];
 
 export const MOCK_VEHICLES = [
-  { id: 'v1', name: 'Bike', description: 'Quick, affordable', eta: '3 min', fare: 65, icon: 'bike' },
-  { id: 'v2', name: 'Auto', description: 'Comfortable, 3 seats', eta: '5 min', fare: 95, icon: 'auto' },
-  { id: 'v3', name: 'Car', description: 'AC, 4 seats', eta: '8 min', fare: 140, icon: 'car' },
+  {
+    id: 'v1',
+    name: 'Bike',
+    description: 'Fastest · 1 passenger',
+    capacity: '1 seat',
+    eta: '3 min',
+    fare: 35,
+    icon: 'bike',
+    serviceType: 'bike_taxi',
+    tag: '',
+  },
+  {
+    id: 'v2',
+    name: 'Scooty',
+    description: 'Affordable · city rides',
+    capacity: '1 seat',
+    eta: '4 min',
+    fare: 45,
+    icon: 'scooty',
+    serviceType: 'scooty',
+    tag: '',
+  },
+  {
+    id: 'v3',
+    name: 'Auto',
+    description: 'Comfortable · 3 passengers',
+    capacity: '3 seats',
+    eta: '5 min',
+    fare: 75,
+    icon: 'auto',
+    serviceType: 'auto',
+    tag: '',
+  },
+  {
+    id: 'v4',
+    name: 'Non-AC Car',
+    description: 'Budget car · 4 passengers',
+    capacity: '4 seats',
+    eta: '8 min',
+    fare: 110,
+    icon: 'car',
+    serviceType: 'car_non_ac',
+    tag: '',
+  },
+  {
+    id: 'v5',
+    name: 'AC Car',
+    description: 'Air-conditioned · 4 passengers',
+    capacity: '4 seats',
+    eta: '9 min',
+    fare: 149,
+    icon: 'car',
+    serviceType: 'car_ac',
+    tag: '❄️ AC',
+  },
+  {
+    id: 'v6',
+    name: 'Car XL',
+    description: 'Spacious SUV · 6 passengers',
+    capacity: '6 seats',
+    eta: '12 min',
+    fare: 199,
+    icon: 'car_xl',
+    serviceType: 'car_xl',
+    tag: '👨‍👩‍👧‍👦 XL',
+  },
 ];
+
+// All possible vehicles for the parcel flow. The screen filters this list
+// dynamically based on the user's selected goods category + weight range.
+export const PARCEL_ALL_VEHICLES = [
+  {
+    id: 'parcel_bike',
+    name: 'Parcel on Bike',
+    description: 'Upto 5 kg · small items & documents',
+    maxKg: 5,
+    minItems: 0,
+    maxItems: 5,
+    eta: '3 mins away',
+    fare: 99,
+    icon: 'bike',
+    goodsBlacklist: ['furniture'],  // never show for furniture
+  },
+  {
+    id: 'parcel_scooty',
+    name: 'Parcel on Scooty',
+    description: 'Upto 15 kg · medium parcels & boxes',
+    maxKg: 15,
+    minItems: 0,
+    maxItems: 10,
+    eta: '4 mins away',
+    fare: 149,
+    icon: 'scooty',
+    goodsBlacklist: ['furniture'],
+  },
+  {
+    id: 'parcel_auto',
+    name: 'Parcel on Auto (3-Wheeler)',
+    description: 'Upto 60 kg · multiple boxes & goods',
+    maxKg: 60,
+    minItems: 0,
+    maxItems: 20,
+    eta: '6 mins away',
+    fare: 279,
+    icon: 'auto',
+    goodsBlacklist: [] as string[],
+  },
+  {
+    id: 'parcel_mini_truck',
+    name: 'Mini Truck (Tata Ace 8ft)',
+    description: 'Upto 750 kg · heavy, bulk & furniture',
+    maxKg: 750,
+    minItems: 0,
+    maxItems: 999,
+    eta: '12 mins away',
+    fare: 549,
+    icon: 'mini_truck',
+    goodsBlacklist: [] as string[],
+  },
+];
+
+// Weight range keys → numeric kg upper bound (used for filtering).
+const WEIGHT_KG: Record<string, number> = {
+  under_5: 5,
+  '5_to_15': 15,
+  '15_to_50': 50,
+  '50_plus': 750,
+};
+
+// Item qty keys → numeric upper bound.
+const QTY_COUNT: Record<string, number> = {
+  '1_3': 3,
+  '4_10': 10,
+  '11_plus': 50,
+};
+
+/**
+ * Returns the subset of PARCEL_ALL_VEHICLES that can handle the user's
+ * selected goods category, weight range and item count.  The list is
+ * returned in ascending fare order (cheapest first, like the reference UI).
+ */
+export function getParcelVehicleOptions(
+  category: string,
+  weightRange: string,
+  qty: string
+): typeof PARCEL_ALL_VEHICLES {
+  const kg = WEIGHT_KG[weightRange] ?? 5;
+  const items = QTY_COUNT[qty] ?? 3;
+  return PARCEL_ALL_VEHICLES.filter((v) => {
+    if (v.goodsBlacklist.includes(category)) return false;
+    if (kg > v.maxKg) return false;
+    if (items > v.maxItems) return false;
+    return true;
+  });
+}
+
+// Legacy export kept so any existing import of PARCEL_VEHICLE_OPTIONS still compiles.
+export const PARCEL_VEHICLE_OPTIONS = PARCEL_ALL_VEHICLES;
 
 // Truck types shown on the "Choose Truck" screen (Within City booking flow).
 export const TRUCK_VEHICLES = [
@@ -420,6 +574,35 @@ export const INTERCITY_MOVERS_PRICING = {
 // Optional packing-material add-on for the Packers & Movers flow.
 export const PACKING_MATERIAL_PRICE = 499;
 
+// Optional packaging tiers offered at the pickup scheduling step, shared by
+// the Truck and Packers & Movers "Schedule Pickup" screens. "none" is free —
+// items travel as-is. The paid tiers wrap items before loading.
+export const PACKAGING_OPTIONS = [
+  {
+    id: 'none',
+    label: 'No Packaging',
+    subtitle: 'Items are moved as-is, no extra wrapping',
+    price: 0,
+    layers: 0,
+  },
+  {
+    id: 'single_layer',
+    label: 'Single-Layer Packaging',
+    subtitle: 'One protective wrap around each item — good for everyday goods',
+    price: 349,
+    layers: 1,
+  },
+  {
+    id: 'multi_layer',
+    label: 'Multi-Layer Packaging',
+    subtitle: 'Extra padded, multi-layer wrap — best for fragile & valuable items',
+    price: 699,
+    layers: 2,
+  },
+] as const;
+
+export type PackagingOptionId = typeof PACKAGING_OPTIONS[number]['id'];
+
 export const MOCK_ORDERS = [
   {
     id: 'ORD-001',
@@ -452,6 +635,22 @@ export const MOCK_ORDERS = [
     rating: 5,
     distance: '12.7 km',
     duration: '42 min',
+  },
+  {
+    id: 'ORD-003',
+    service: 'Auto',
+    pickup: 'Jayanagar 4th Block',
+    drop: 'Electronic City Phase 1',
+    date: '8 Jun 2026',
+    time: '06:45 PM',
+    fare: '₹95',
+    status: 'cancelled',
+    driverName: 'Manjunath R.',
+    driverPhone: '9876500003',
+    vehicleNumber: 'KA 03 JK 9012',
+    rating: null,
+    distance: '9.4 km',
+    duration: '0 min',
   },
   {
     id: 'ORD-003',

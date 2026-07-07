@@ -170,7 +170,7 @@ export default function CountryPicker({ selected, onSelect }: CountryPickerProps
                           style={[
                             styles.countryRow,
                             { borderBottomColor: colors.divider },
-                            isSelected && { backgroundColor: Colors.primaryLight },
+                            isSelected && { backgroundColor: colors.iconBg },
                           ]}
                           onPress={() => handleSelect(item)}
                           accessibilityLabel={`Select ${item.name} ${item.dialCode}`}

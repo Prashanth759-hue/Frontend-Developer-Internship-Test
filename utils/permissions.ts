@@ -16,28 +16,29 @@ export type PermissionStatus = 'granted' | 'denied' | 'unavailable';
 
 /**
  * Request foreground location permission.
- * Shows a friendly alert if denied, with a link to Settings.
+ * Caller (useLocation hook) is responsible for any in-app messaging
+ * before/after this — this function just talks to the OS.
  */
 export async function requestLocationPermission(): Promise<PermissionStatus> {
   try {
     const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status === 'granted') return 'granted';
-
-    // Already determined — can't ask again; guide to Settings
-    Alert.alert(
-      'Location Access Required',
-      'Vahan360 needs your location to find nearby drivers and estimate fares. Please enable it in Settings.',
-      [
-        { text: 'Not Now', style: 'cancel' },
-        {
-          text: 'Open Settings',
-          onPress: () => Linking.openSettings(),
-        },
-      ]
-    );
-    return 'denied';
+    return status === 'granted' ? 'granted' : 'denied';
   } catch {
     return 'unavailable';
+  }
+}
+
+/**
+ * Check whether the DEVICE's location services (GPS/Location toggle in the
+ * phone's system settings) are turned on at all — independent of whether
+ * this app has been granted permission. This is what tells us to show the
+ * "Turn on Location" popup vs silently fetching location.
+ */
+export async function checkLocationServicesEnabled(): Promise<boolean> {
+  try {
+    return await Location.hasServicesEnabledAsync();
+  } catch {
+    return false;
   }
 }
 
@@ -108,5 +109,105 @@ export async function requestNotificationPermission(): Promise<PermissionStatus>
     return status === 'granted' ? 'granted' : 'denied';
   } catch {
     return 'unavailable';
+  }
+}
+
+// ── Contacts ──────────────────────────────────────────────────────────────────
+
+export interface PickedContact {
+  name: string;
+  phone: string;
+}
+
+// Minimal shape of the expo-contacts module we actually use. Declared
+// locally (instead of importing the package's own types) so this file
+// type-checks even before `npm install` / `expo install expo-contacts`
+// has been run. Once installed, the dynamic import below still resolves
+// to the real module at runtime — this is purely a compile-time stand-in.
+interface ContactsModule {
+  requestPermissionsAsync: () => Promise<{ status: string }>;
+  getPermissionsAsync: () => Promise<{ status: string }>;
+  getContactsAsync: (options: { fields: string[] }) => Promise<{
+    data: Array<{
+      name?: string;
+      phoneNumbers?: Array<{ number?: string }>;
+    }>;
+  }>;
+  Fields: { PhoneNumbers: string };
+}
+
+async function loadContactsModule(): Promise<ContactsModule | null> {
+  try {
+    // Resolved dynamically at runtime; package may or may not be
+    // installed, so we don't want a hard compile-time dependency on
+    // its types. Using a plain string import target (not a literal
+    // TS can statically resolve against this file's own type-checking)
+    // keeps this safe whether or not expo-contacts is present.
+    const moduleName = 'expo-contacts';
+    const mod = await import(moduleName).catch(() => null);
+    return (mod as unknown as ContactsModule) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Request contacts permission ONLY at the moment the user taps
+ * "Pick from contacts" — never upfront on screen load. Mirrors the
+ * location permission pattern: real OS prompt, friendly Settings
+ * fallback if previously denied, safe no-op if the package is missing.
+ */
+export async function requestContactsPermission(): Promise<PermissionStatus> {
+  try {
+    const Contacts = await loadContactsModule();
+    if (!Contacts) return 'unavailable';
+
+    const { status } = await Contacts.requestPermissionsAsync();
+    if (status === 'granted') return 'granted';
+
+    Alert.alert(
+      'Contacts Access Required',
+      'Vahan360 needs access to your contacts to fill in receiver details. Please enable it in Settings.',
+      [
+        { text: 'Not Now', style: 'cancel' },
+        {
+          text: 'Open Settings',
+          onPress: () => Linking.openSettings(),
+        },
+      ]
+    );
+    return 'denied';
+  } catch {
+    return 'unavailable';
+  }
+}
+
+/**
+ * Fetch the device's contacts (name + first phone number only), for use
+ * in an in-app contact picker list. Returns an empty array if permission
+ * isn't granted or the package isn't installed — callers should request
+ * permission via requestContactsPermission() first.
+ */
+export async function getContactsList(): Promise<PickedContact[]> {
+  try {
+    const Contacts = await loadContactsModule();
+    if (!Contacts) return [];
+
+    const { status } = await Contacts.getPermissionsAsync();
+    if (status !== 'granted') return [];
+
+    const { data } = await Contacts.getContactsAsync({
+      fields: [Contacts.Fields.PhoneNumbers],
+    });
+
+    return data
+      .filter((c) => c.phoneNumbers && c.phoneNumbers.length > 0 && c.name)
+      .map((c) => ({
+        name: c.name as string,
+        phone: (c.phoneNumbers?.[0]?.number ?? '').replace(/\D/g, '').slice(-10),
+      }))
+      .filter((c) => c.phone.length === 10);
+  } catch {
+    return [];
   }
 }
