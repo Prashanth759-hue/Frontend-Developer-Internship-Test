@@ -23,6 +23,7 @@ import { useLanguage, LANG_LIST, LangCode } from '../../theme/LanguageContext';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { useAuthStore } from '../../store/authStore';
+import { sendOTP } from '../../services/api';
 import { checkRateLimit } from '../../constants/security';
 import { validatePhone, isValidPhone } from '../../utils/validators';
 import LOGIN_BG from '../../assets/bg/loginBg';
@@ -118,7 +119,7 @@ export default function LoginScreen() {
     }
   };
 
-  const handleSendOTP = () => {
+  const handleSendOTP = async () => {
     const result = validatePhone(phoneInput);
     if (!result.valid) {
       setLocalError(result.error ?? t('loginErrorInvalid'));
@@ -131,10 +132,14 @@ export default function LoginScreen() {
     setLocalError('');
     setPhone(phoneInput);
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await sendOTP({ phone: phoneInput });
       router.push('/(auth)/otp');
-    }, 1200);
+    } catch (err: any) {
+      setLocalError(err?.message ?? 'Could not send OTP. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Active language label for the button
