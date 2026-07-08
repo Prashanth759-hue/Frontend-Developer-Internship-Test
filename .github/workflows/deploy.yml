@@ -1,0 +1,31 @@
+name: CI/CD Build and Deploy
+
+# Trigger the pipeline on every push to the main branch
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  validate-and-deploy:
+    # Tell GitHub to run this job directly on your local HP EliteDesk
+    runs-on: self-hosted
+
+    steps:
+      # Step 1: Pull the latest code from Git
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Install dependencies and build the application
+      - name: Install Dependencies & Build
+        run: |
+          npm install
+          npx expo export --platform web  # Or 'npm run build' depending on your app type
+      # Step 3: Deploy/Move the files to your active hosting folder
+      - name: Deploy to Server Directory
+        run: |
+          sudo cp -R ./* /var/www/vahan360-customer/
+          
+      # Step 4: Restart your hosting service (e.g., Nginx) to apply changes
+      - name: Restart Web Server
+        run: |
+          sudo systemctl restart nginx
