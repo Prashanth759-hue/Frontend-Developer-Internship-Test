@@ -175,7 +175,7 @@ export default function LoginScreen() {
                 accessibilityLabel="Select language"
               >
                 <Text style={styles.langTriggerIcon}>🌐</Text>
-                <Text style={styles.langTriggerText}>{activeLang?.label ?? 'English'}</Text>
+                <Text style={styles.langTriggerText}>{activeLang?.label ?? 'Eng'}</Text>
                 <Text style={styles.langTriggerChevron}>▾</Text>
               </TouchableOpacity>
             </View>
