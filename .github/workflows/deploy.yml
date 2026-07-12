@@ -13,7 +13,8 @@ jobs:
 
       - name: Deploy to Server Directory
         run: |
-          sudo cp -R ${{ github.workspace }}/. /home/ubuntu/demo-page/
+          sudo rm -rf /home/ubuntu/demo-page/*
+          sudo cp -R ${{ github.workspace }}/* /home/ubuntu/demo-page/
           
       - name: Restart Web Server
         run: sudo systemctl restart nginx
