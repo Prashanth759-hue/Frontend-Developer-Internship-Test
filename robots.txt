@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://vahan360.co.in/sitemap.xml
